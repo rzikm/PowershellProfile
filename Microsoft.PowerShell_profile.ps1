@@ -78,3 +78,8 @@ if ($IsLinux)
 {
     LinuxSetup
 }
+
+if (Test-Path -PathType Leaf $PSScriptRoot/local.ps1)
+{
+    . $PSScriptRoot/local.ps1
+}
