@@ -94,7 +94,7 @@ function Watch-File
         [Parameter(Mandatory = $true)]
         [scriptblock] $ScriptBlock,
         # Filter for file system events
-        [System.IO.NotifyFilters] $NotifyFilter = $null,
+        [Nullable[System.IO.NotifyFilters]] $NotifyFilter = $null,
         # Directory to watch. Defaults to current directory.
         [string] $Directory = $pwd
     )
