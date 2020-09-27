@@ -34,12 +34,12 @@ function InitializeModules
         $modules += $linuxOnlyModules
     }
 
-    $installed = Get-InstalledModule | ForEach-Object { $_.Name }
-    $toInstall = Compare-Object $modules $installed | Where-Object {$_.SideIndicator -eq "<=" } | ForEach-Object { $_.InputObject }
+    $installed = (Get-InstalledModule).Name
+    $toInstall = (Compare-Object $modules $installed | Where-Object { $_.SideIndicator -eq "<=" } ).InputObject
 
     if ($toInstall)
     {
-        "Installing missing modules"
+        "Installing missing modules: $toInstall"
         Install-Module $toInstall
     }
 
