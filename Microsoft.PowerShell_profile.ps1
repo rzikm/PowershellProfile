@@ -18,11 +18,13 @@ Adds string to the PATH environment variable
 function InitializeModules
 {
     $modules = @(
-        "posh-git",
-        "oh-my-posh",
+        "posh-git"
+        "oh-my-posh", # includes also posh-git
+        "PowerGit"
         "Posh-With",
         "TabExpansionPlusPlus",
-        "ZLocation"
+        "ZLocation",
+        "JiraPS"
     )
 
     $linuxOnlyModules = @(
@@ -43,7 +45,9 @@ function InitializeModules
         Install-Module $toInstall
     }
 
-    Import-Module $modules
+    # we need to import posh-git first and then PowerGit, so that its commands do not get overriden
+    Import-Module posh-git
+    Import-Module PowerGit
 
     Add-Path ~/.emacs.d/bin
 
@@ -77,6 +81,12 @@ function emt { runemacs -t $args -a vim }
 function magit { emacsclient -c -t -e "(progn (magit-status) (delete-other-windows))" }
 
 InitializeModules
+
+# overwrite Get-VcsStatus to use correct Get-GitStatus function
+function Get-VcsStatus {
+    $global:GitStatus = posh-git\Get-GitStatus
+    return $global:GitStatus
+}
 
 if ($IsLinux)
 {
