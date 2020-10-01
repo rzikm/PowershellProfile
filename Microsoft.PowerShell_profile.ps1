@@ -34,8 +34,8 @@ function InitializeModules
         $modules += $linuxOnlyModules
     }
 
-    $installed = (Get-InstalledModule).Name
-    $toInstall = (Compare-Object $modules $installed | Where-Object { $_.SideIndicator -eq "<=" } ).InputObject
+    $installed = (Get-InstalledModule).Name ?? @()
+    $toInstall = Compare-Object $modules $installed | Where-Object {$_.SideIndicator -eq "<=" } | ForEach-Object { $_.InputObject }
 
     if ($toInstall)
     {
@@ -67,6 +67,10 @@ function LinuxSetup
     $Env:SUDO_EDITOR="$(which emacsclient) -t -a vim"
 }
 
+# Override out-default to save the command output to a global variable $it
+function Out-Default {
+    $input | Tee-Object -var global:it | Microsoft.PowerShell.Core\Out-Default
+}
 
 function emc { runemacs $args -a emacs }
 function emt { runemacs -t $args -a vim }
