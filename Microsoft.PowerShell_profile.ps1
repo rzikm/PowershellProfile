@@ -78,7 +78,7 @@ function Out-Default {
 
 function emc { runemacs $args -a emacs }
 function emt { runemacs -t $args -a vim }
-function magit { emacsclient -c -t -e "(progn (magit-status) (delete-other-windows))" }
+function magit { runemacs -c -t -e "(progn (magit-status) (delete-other-windows))" }
 
 InitializeModules
 
@@ -139,3 +139,5 @@ function Watch-File
         $watcher.Dispose()
     }
 }
+
+. $PSScriptRoot/Trace-Dotnet.ps1
