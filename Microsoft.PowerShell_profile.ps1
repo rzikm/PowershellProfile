@@ -169,4 +169,39 @@ function Watch-File
     }
 }
 
+function Watch-Command
+{
+    param(
+        [scriptblock] $Command,
+        [scriptblock] $ScriptBlock,
+        [int32] $Delay = 1,
+        [switch] $UntilTrue
+    )
+
+    $output = & $Command
+
+    while ($true)
+    {
+        if ([bool]$output -and $UntilTrue)
+        {
+            & $ScriptBlock
+        }
+
+        Start-Sleep $Delay
+
+        $newOutput = & $Command
+
+        if (!$UntilTrue)
+        {
+            $diff = Compare-Object $output $newOutput
+            if ($diff)
+            {
+                & $ScriptBlock
+            }
+        }
+
+        $output = $newOutput
+    }
+}
+
 . $PSScriptRoot/Trace-Dotnet.ps1
