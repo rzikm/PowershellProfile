@@ -31,9 +31,18 @@ function InitializeModules
         "Microsoft.PowerShell.UnixCompleters"
     )
 
+    $windowsOnlyModules = @(
+        "CredentialManager"
+    )
+
     if ($IsLinux)
     {
         $modules += $linuxOnlyModules
+    }
+
+    if ($IsWindows)
+    {
+        $modules += $windowsOnlyModules
     }
 
     $installed = (Get-InstalledModule).Name ?? @()
