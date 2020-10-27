@@ -21,7 +21,7 @@ function InitializeModules
         "posh-git"
         "oh-my-posh", # includes also posh-git
         "PowerGit"
-        "Posh-With",
+        "posh-with",
         "TabExpansionPlusPlus",
         "ZLocation",
         "JiraPS"
@@ -82,7 +82,27 @@ function LinuxSetup
 
 # Override out-default to save the command output to a global variable $it
 function Out-Default {
-    $input | Tee-Object -var global:it | Microsoft.PowerShell.Core\Out-Default
+    [CmdletBinding(ConfirmImpact = 'Medium')]
+    param(
+        [Parameter(ValueFromPipeline)]
+        [PSObject] $InputObject
+    )
+
+    begin{
+        $wrappedCmdlet = $ExecutionContext.InvokeCommand.GetCmdlet('Out-Default')
+        $sp = { & $wrappedCmdlet @PSBoundParameters }.GetSteppablePipeline()
+        $sp.Begin($PSCmdlet)
+
+        $it = @()
+    }
+    process{
+        $sp.Process($_)
+        $it += $_
+    }
+    end{
+        $sp.End()
+        $global:it = $it
+    }
 }
 
 function emc { runemacs $args -a emacs }
