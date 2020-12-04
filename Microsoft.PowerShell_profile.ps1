@@ -205,3 +205,4 @@ function Watch-Command
 }
 
 . $PSScriptRoot/Trace-Dotnet.ps1
+. $PSScriptRoot/Use-DotnetRoot.ps1
