@@ -61,9 +61,8 @@ function InitializeModules
     Add-Path ~/.emacs.d/bin
 
     Set-Theme Paradox
-    Set-PSReadLineOption -EditMode Vi
-    Set-PSReadLineOption -ViModeIndicator Cursor
-    Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
+
+    . $PSScriptRoot/PSReadLineConfig.ps1
 }
 
 function LinuxSetup
