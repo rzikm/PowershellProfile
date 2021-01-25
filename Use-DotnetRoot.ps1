@@ -18,5 +18,12 @@ function Use-DotnetRoot
     $Env:DOTNET_MULTILEVEL_LOOKUP=0
 
     # Put our local dotnet.exe on PATH first so Visual Studio knows which one to use
-    $Env:PATH="$DotnetRoot;$($Env:PATH)"
+    if ($IsWindows)
+    {
+        $Env:PATH="$DotnetRoot;$($Env:PATH)"
+    }
+    if ($IsLinux)
+    {
+        $Env:PATH="$($DotnetRoot):$($Env:PATH)"
+    }
 }
