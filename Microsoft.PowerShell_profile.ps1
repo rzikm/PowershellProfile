@@ -213,3 +213,55 @@ Register-ArgumentCompleter -Native -CommandName dotnet -ScriptBlock {
             [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
          }
  }
+
+function SendGradingEmails
+{
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+    param(
+        # Org file with comments for each student
+        [Parameter(Mandatory)]
+        [string] $Filename,
+
+        # Subject of the email
+        [Parameter(Mandatory)]
+        [string] $Subject,
+
+        # Prefix to the body of the email
+        [Parameter()]
+        [string] $PreBody = "Zdravím,`n",
+
+        # Suffix to the body
+        [Parameter()]
+        [string] $PostBody = "`nRadek"
+    )
+
+    $EmailFrom = "r.zikmund.rz@gmail.com"
+    $SMTPServer = "smtp.gmail.com"
+
+    $SMTPClient = New-Object Net.Mail.SmtpClient($SmtpServer, 587)
+    $SMTPClient.EnableSsl = $true
+    $creds = Get-StoredCredential -Target gmail-app-personal
+    $SMTPClient.Credentials = New-Object System.Net.NetworkCredential -ArgumentList $creds.UserName, $creds.Password
+
+    $m = Get-Content -raw $Filename | Select-String '\* .*\t(?<mail>.*)(?<body>[^*]+)' -AllMatches
+    $m.Matches | ForEach-Object {
+        $mail = $_.Groups[1].Value.Trim()
+        $body = $PreBody + $_.Groups[2].Value + $PostBody
+
+        $mail
+
+        if ($Force -or $PSCmdlet.ShouldProcess("Send mail to '$mail':`n$body"))
+        {
+            $mm = New-Object System.Net.Mail.MailMessage
+            $mm.From = New-Object System.Net.Mail.MailAddress -ArgumentList $EmailFrom
+            $mm.To.Add((New-Object System.Net.Mail.MailAddress -ArgumentList $mail))
+            $mm.Subject = $Subject
+            $mm.Body = $body
+
+            $SMTPClient.Send($mm)
+            $mm.Dispose()
+        }
+    }
+
+    $SMTPClient.Dispose();
+}
