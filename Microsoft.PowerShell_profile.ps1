@@ -9,9 +9,34 @@ Adds string to the PATH environment variable
 Adds string to the PATH environment variable
 
 #>
-    param([string] $Path)
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $Path,
 
-    $Env:PATH += ":$Path"
+        [Parameter()]
+        [switch] $Prepend
+    )
+
+    $separator 
+
+    if ($IsLinux)
+    {
+        $separator = ":"
+    }
+    if ($IsWindows)
+    {
+        $separator = ";"
+    }
+
+    if ($Prepend)
+    {
+        $Env:PATH = "$Path$separator${Env:Path}"
+    }
+    else
+    {
+        $Env:PATH += "$separator$Path"
+    }
 }
 
 
