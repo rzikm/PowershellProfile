@@ -18,7 +18,7 @@ Adds string to the PATH environment variable
         [switch] $Prepend
     )
 
-    $separator 
+    $separator
 
     if ($IsLinux)
     {
@@ -268,7 +268,7 @@ function SendGradingEmails
     $creds = Get-StoredCredential -Target gmail-app-personal
     $SMTPClient.Credentials = New-Object System.Net.NetworkCredential -ArgumentList $creds.UserName, $creds.Password
 
-    $m = Get-Content -raw $Filename | Select-String '\* .*\t(?<mail>.*)(?<body>[^*]+)' -AllMatches
+    $m = Get-Content -raw $Filename | Select-String '^\* .*\t(?<mail>.*)(?<body>[^*]+)' -AllMatches
     $m.Matches | ForEach-Object {
         $mail = $_.Groups[1].Value.Trim()
         $body = $PreBody + $_.Groups[2].Value + $PostBody
@@ -289,4 +289,25 @@ function SendGradingEmails
     }
 
     $SMTPClient.Dispose();
+}
+
+function ShowDiff
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, ValueFromPipeline, Position = 1)]
+        [AllowEmptyString()]
+        [string[]] $DifferenceObject,
+
+        [Parameter(Mandatory, Position = 0)]
+        [AllowEmptyString()]
+        [string[]] $ReferenceObject
+    )
+
+    $compare = Compare-Object -ReferenceObject $ReferenceObject -DifferenceObject $DifferenceObject
+    $rights = @($compare | Where-Object { $_.sideindicator -eq "=>" })
+    $lefts = @($compare | Where-Object { $_.sideindicator -eq "<=" })
+    foreach ($right in $rights) {
+        "$($right.InputObject) `t $($right.SideIndicator)  $($lefts[($Rights.IndexOf($right))].InputObject) `t $($lefts[($Rights.IndexOf($right))].SideIndicator)"
+    }
 }
