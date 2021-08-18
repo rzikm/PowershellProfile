@@ -257,7 +257,11 @@ function SendGradingEmails
 
         # Suffix to the body
         [Parameter()]
-        [string] $PostBody = "`nRadek"
+        [string] $PostBody = "`nRadek",
+
+        # AttachmentFileName
+        [Parameter()]
+        [string] $AttachmentFileName
     )
 
     $EmailFrom = "r.zikmund.rz@gmail.com"
@@ -268,20 +272,38 @@ function SendGradingEmails
     $creds = Get-StoredCredential -Target gmail-app-personal
     $SMTPClient.Credentials = New-Object System.Net.NetworkCredential -ArgumentList $creds.UserName, $creds.Password
 
-    $m = Get-Content -raw $Filename | Select-String '^\* .*\t(?<mail>.*)(?<body>[^*]+)' -AllMatches
+    $m = Get-Content -raw $Filename | Select-String '\* [^@]*\t(?<mail>[^\t]+)(\t(?<dir>.+))?(?<body>[^*]+)' -AllMatches
     $m.Matches | ForEach-Object {
-        $mail = $_.Groups[1].Value.Trim()
-        $body = $PreBody + $_.Groups[2].Value + $PostBody
+        $mail = $_.Groups['mail'].Value.Trim()
+        $dir = $_.Groups['dir'].Value.Trim()
+        $body = $PreBody + $_.Groups['body'].Value + $PostBody
 
         $mail
 
-        if ($Force -or $PSCmdlet.ShouldProcess("Send mail to '$mail':`n$body"))
+        if ($AttachmentFileName)
+        {
+            $attachmentFile = Get-Item (Join-Path (Split-Path -Parent $Filename) $dir $AttachmentFileName)
+        }
+
+        $msg = "Send mail to '$mail':`n$body"
+
+        if ($AttachmentFileName)
+        {
+            $msg += "`nWith attachment: $attachmentFile"
+        }
+
+        if ($Force -or $PSCmdlet.ShouldProcess($msg))
         {
             $mm = New-Object System.Net.Mail.MailMessage
             $mm.From = New-Object System.Net.Mail.MailAddress -ArgumentList $EmailFrom
             $mm.To.Add((New-Object System.Net.Mail.MailAddress -ArgumentList $mail))
             $mm.Subject = $Subject
             $mm.Body = $body
+
+            if ($AttachmentFileName)
+            {
+                $mm.Attachments.Add([System.Net.Mail.Attachment]::new($attachmentFile.FullName))
+            }
 
             $SMTPClient.Send($mm)
             $mm.Dispose()
@@ -309,5 +331,47 @@ function ShowDiff
     $lefts = @($compare | Where-Object { $_.sideindicator -eq "<=" })
     foreach ($right in $rights) {
         "$($right.InputObject) `t $($right.SideIndicator)  $($lefts[($Rights.IndexOf($right))].InputObject) `t $($lefts[($Rights.IndexOf($right))].SideIndicator)"
+    }
+}
+
+function CompareDirectories
+{
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory)]
+        [System.IO.DirectoryInfo] $Reference,
+
+        [Parameter(Mandatory)]
+        [System.IO.DirectoryInfo] $Target
+    )
+
+    $ref = Get-ChildItem -Recurse $Reference | Sort-Object -Property FullName
+    $tgt = Get-ChildItem -Recurse $Target | Sort-Object -Property FullName
+
+    $refRelative = $ref | ForEach-Object { [System.IO.Path]::GetRelativePath($Reference.FullName, $_) }
+    $tgtRelative = $tgt | ForEach-Object { [System.IO.Path]::GetRelativePath($Target.FullName, $_) }
+
+    $diff = Compare-Object -ReferenceObject $refRelative -DifferenceObject $tgtRelative
+    if ($diff)
+    {
+        Write-Host "File names differ:"
+        $diff
+    }
+
+    foreach ($file in $refRelative)
+    {
+        $refFile = Get-Item (Join-Path $Reference $file)
+        $tgtFile = Get-Item (Join-Path $Target $file) -ErrorAction SilentlyContinue
+
+        if (!$tgtFile)
+        {
+            # File does not exist in target
+            continue;
+        }
+
+        if ((Get-FileHash $refFile).Hash -ne (Get-FileHash $tgtFile).Hash)
+        {
+            Write-Host "File $file differs"
+        }
     }
 }
