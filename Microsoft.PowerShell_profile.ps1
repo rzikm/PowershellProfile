@@ -85,9 +85,9 @@ function InitializeModules
 
     Add-Path ~/.emacs.d/bin
 
-    Set-Theme Paradox
+    Set-PoshPrompt $PSScriptRoot\theme.omp.json
 
-    . $PSScriptRoot/PSReadLineConfig.ps1
+    . $PSScriptRoot\PSReadLineConfig.ps1
 }
 
 function LinuxSetup
