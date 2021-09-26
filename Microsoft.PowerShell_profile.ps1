@@ -39,6 +39,21 @@ Adds string to the PATH environment variable
     }
 }
 
+if ($IsLinux)
+{
+    function emc { emacsclient $args -a emacs }
+    function emt { emacsclient -t $args -a vim }
+    function magit { emacsclient -c -t -e "(progn (magit-status) (delete-other-windows))" }
+}
+
+
+if ($IsWindows)
+{
+    function emc { $null = runemacs $args -a emacs }
+    function emt { $null = runemacs -t $args -a vim }
+    function magit { $null = runemacs -c -t -e "(progn (magit-status) (delete-other-windows))" }
+}
+
 
 function InitializeModules
 {
@@ -98,8 +113,8 @@ function LinuxSetup
     Add-Path ~/.dotnet/tools/
     Add-Path /usr/local/texlive/2020/bin/x86_64-linux
 
-    $Env:EDITOR="$(which runemacs) -t -a vim"
-    $Env:VISUAL="$(which runemacs) -c -a 'emacs'"
+    $Env:EDITOR="$(which emacsclient) -t -a emacs"
+    $Env:VISUAL="$(which emacsclient) -c -a emacs"
 
     $Env:SUDO_EDITOR="$(which emacsclient) -t -a vim"
 }
@@ -128,10 +143,6 @@ function Out-Default {
         $global:it = $it
     }
 }
-
-function emc { runemacs $args -a emacs }
-function emt { runemacs -t $args -a vim }
-function magit { runemacs -c -t -e "(progn (magit-status) (delete-other-windows))" }
 
 InitializeModules
 
