@@ -1,12 +1,12 @@
-function Add-Path
+function Add-EnvironmentPath
 {
     <#
 
 .SYNOPSIS
-Adds string to the PATH environment variable
+Appends string to the PATH environment variable
 
 .DESCRIPTION
-Adds string to the PATH environment variable
+Appends string to the PATH environment variable
 
 #>
     [CmdletBinding()]
@@ -17,8 +17,6 @@ Adds string to the PATH environment variable
         [Parameter()]
         [switch] $Prepend
     )
-
-    $separator
 
     if ($IsLinux)
     {
@@ -39,27 +37,10 @@ Adds string to the PATH environment variable
     }
 }
 
-if ($IsLinux)
-{
-    function emc { emacsclient $args -a emacs }
-    function emt { emacsclient -t $args -a vim }
-    function magit { emacsclient -c -t -e "(progn (magit-status) (delete-other-windows))" }
-}
-
-
-if ($IsWindows)
-{
-    function emc { $null = runemacs $args -a emacs }
-    function emt { $null = runemacs -t $args -a vim }
-    function magit { $null = runemacs -c -t -e "(progn (magit-status) (delete-other-windows))" }
-}
-
-
 function InitializeModules
 {
     $modules = @(
-        "posh-git"
-        "oh-my-posh", # includes also posh-git
+        "oh-my-posh",
         "PowerGit"
         "posh-with",
         "TabExpansionPlusPlus",
@@ -93,25 +74,15 @@ function InitializeModules
         "Installing missing modules: $toInstall"
         Install-Module $toInstall
     }
-
-    # we need to import posh-git first and then PowerGit, so that its commands do not get overriden
-    Import-Module posh-git
-    Import-Module PowerGit
-
-    Add-Path ~/.emacs.d/bin
-
-    Set-PoshPrompt $PSScriptRoot\theme.omp.json
-
-    . $PSScriptRoot\PSReadLineConfig.ps1
 }
 
 function LinuxSetup
 {
-    Add-Path ~/bin
-    Add-Path ~/.config/composer/vendor/bin/
-    Add-Path ~/.gem/ruby/2.7.0/bin/
-    Add-Path ~/.dotnet/tools/
-    Add-Path /usr/local/texlive/2020/bin/x86_64-linux
+    Add-EnvironmentPath ~/bin
+    Add-EnvironmentPath ~/.config/composer/vendor/bin/
+    Add-EnvironmentPath ~/.gem/ruby/2.7.0/bin/
+    Add-EnvironmentPath ~/.dotnet/tools/
+    Add-EnvironmentPath /usr/local/texlive/2020/bin/x86_64-linux
 
     $Env:EDITOR="$(which emacsclient) -t -a emacs"
     $Env:VISUAL="$(which emacsclient) -c -a emacs"
@@ -142,24 +113,6 @@ function Out-Default {
         $sp.End()
         $global:it = $it
     }
-}
-
-InitializeModules
-
-# overwrite Get-VcsStatus to use correct Get-GitStatus function
-function Get-VcsStatus {
-    $global:GitStatus = posh-git\Get-GitStatus
-    return $global:GitStatus
-}
-
-if ($IsLinux)
-{
-    LinuxSetup
-}
-
-if (Test-Path -PathType Leaf $PSScriptRoot/local.ps1)
-{
-    . $PSScriptRoot/local.ps1
 }
 
 function Watch-File
@@ -238,17 +191,6 @@ function Watch-Command
         $output = $newOutput
     }
 }
-
-. $PSScriptRoot/Trace-Dotnet.ps1
-. $PSScriptRoot/Use-DotnetRoot.ps1
-
-# PowerShell parameter completion shim for the dotnet CLI
-Register-ArgumentCompleter -Native -CommandName dotnet -ScriptBlock {
-     param($commandName, $wordToComplete, $cursorPosition)
-         dotnet complete --position $cursorPosition "$wordToComplete" | ForEach-Object {
-            [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
-         }
- }
 
 function SendGradingEmails
 {
@@ -384,5 +326,47 @@ function CompareDirectories
         {
             Write-Host "File $file differs"
         }
+    }
+}
+
+# load stuff only when running in interactive mode to speed up stuff
+if (!($MyInvocation.ScriptName))
+{
+    # PowerShell parameter completion shim for the dotnet CLI
+    Register-ArgumentCompleter -Native -CommandName dotnet -ScriptBlock {
+        param($commandName, $wordToComplete, $cursorPosition)
+            dotnet complete --position $cursorPosition "$wordToComplete" | ForEach-Object {
+                [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+            }
+    }
+
+    if ($IsLinux)
+    {
+        LinuxSetup
+
+        function emc { emacsclient $args -a emacs }
+        function emt { emacsclient -t $args -a vim }
+        function magit { emacsclient -c -t -e "(progn (magit-status) (delete-other-windows))" }
+    }
+
+    if ($IsWindows)
+    {
+        function emc { $null = runemacs $args -a emacs }
+        function emt { $null = runemacs -t $args -a vim }
+        function magit { $null = runemacs -c -t -e "(progn (magit-status) (delete-other-windows))" }
+    }
+
+    Add-EnvironmentPath ~/.emacs.d/bin
+
+    Set-PoshPrompt $PSScriptRoot/theme.omp.json
+
+    . $PSScriptRoot/PSReadLineConfig.ps1
+
+    . $PSScriptRoot/Trace-Dotnet.ps1
+    . $PSScriptRoot/Use-DotnetRoot.ps1
+
+    if (Test-Path -PathType Leaf $PSScriptRoot/local.ps1)
+    {
+        . $PSScriptRoot/local.ps1
     }
 }
