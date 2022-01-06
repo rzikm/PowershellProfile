@@ -351,9 +351,8 @@ if (!($MyInvocation.ScriptName))
 
     if ($IsWindows)
     {
-        function emc { $null = runemacs $args -a emacs }
-        function emt { $null = runemacs -t $args -a vim }
-        function magit { $null = runemacs -c -t -e "(progn (magit-status) (delete-other-windows))" }
+        function emc { $null = emacsclientw $args -a emacs }
+        function magit { $null = emacsclientw $args -e "(progn (magit-status) (delete-other-windows))" }
     }
 
     Add-EnvironmentPath ~/.emacs.d/bin
