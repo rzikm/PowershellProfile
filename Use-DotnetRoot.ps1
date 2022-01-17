@@ -4,11 +4,7 @@ function Use-DotnetRoot
     param(
         # path to the dotnet_root folder
         [Parameter(Mandatory)]
-        [string] $DotnetRoot,
-
-        # solution to open
-        [Parameter()]
-        [string] $SolutionPath
+        [string] $DotnetRoot
     )
 
     # This tells .NET Core to use the dotnet.exe in the DotnetRoot directory

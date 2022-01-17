@@ -361,8 +361,10 @@ if (!($MyInvocation.ScriptName))
 
     . $PSScriptRoot/PSReadLineConfig.ps1
 
+    # Helper cmdlets for work
     . $PSScriptRoot/Trace-Dotnet.ps1
     . $PSScriptRoot/Use-DotnetRoot.ps1
+    . $PSScriptRoot/Open-VSSolution.ps1
 
     if (Test-Path -PathType Leaf $PSScriptRoot/local.ps1)
     {
