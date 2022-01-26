@@ -347,6 +347,22 @@ if (!($MyInvocation.ScriptName))
         function emc { emacsclient $args -a emacs }
         function emt { emacsclient -t $args -a vim }
         function magit { emacsclient -c -t -e "(progn (magit-status) (delete-other-windows))" }
+
+        # If running inside WSL, use windows's git when under C:/ drive
+        if ((uname -r) -match 'WSL')
+        {
+            function git {
+                if ($pwd.Path.StartsWith("/mnt/c/"))
+                {
+                    git.exe $args
+                }
+                else
+                {
+                    $git = which git
+                    &$git $args
+                }
+            }
+        }
     }
 
     if ($IsWindows)
