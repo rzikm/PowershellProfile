@@ -369,9 +369,9 @@ if (!($MyInvocation.ScriptName))
     {
         function emc { $null = emacsclientw $args -a emacs }
         function magit { $null = emacsclientw $args -e "(progn (magit-status) (delete-other-windows))" }
-    }
 
-    Add-EnvironmentPath ~/.emacs.d/bin
+        Add-EnvironmentPath (Resolve-Path "~/.emacs.d/bin")
+    }
 
     Set-PoshPrompt $PSScriptRoot/theme.omp.json
 
