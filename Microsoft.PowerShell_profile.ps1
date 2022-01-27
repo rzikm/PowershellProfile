@@ -380,6 +380,7 @@ if (!($MyInvocation.ScriptName))
     . $PSScriptRoot/Trace-Dotnet.ps1
     . $PSScriptRoot/Use-DotnetRoot.ps1
     . $PSScriptRoot/Open-VSSolution.ps1
+    . $PSScriptRoot/Build-DotnetRuntime.ps1
 
     if (Test-Path -PathType Leaf $PSScriptRoot/local.ps1)
     {
