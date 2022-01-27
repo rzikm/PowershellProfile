@@ -41,11 +41,10 @@ function InitializeModules
 {
     $modules = @(
         "oh-my-posh",
-        "PowerGit"
         "posh-with",
         "TabExpansionPlusPlus",
         "ZLocation",
-        "JiraPS"
+        "posh-git"
     )
 
     $linuxOnlyModules = @(
