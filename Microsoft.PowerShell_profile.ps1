@@ -18,6 +18,12 @@ Appends string to the PATH environment variable
         [switch] $Prepend
     )
 
+    if (!(Test-Path $Path))
+    {
+        # path does not exist
+        return;
+    }
+
     if ($IsLinux)
     {
         $separator = ":"
@@ -78,15 +84,36 @@ function InitializeModules
 function LinuxSetup
 {
     Add-EnvironmentPath ~/bin
-    Add-EnvironmentPath ~/.config/composer/vendor/bin/
-    Add-EnvironmentPath ~/.gem/ruby/2.7.0/bin/
     Add-EnvironmentPath ~/.dotnet/tools/
-    Add-EnvironmentPath /usr/local/texlive/2020/bin/x86_64-linux
+    Add-EnvironmentPath ~/.config/emacs/bin
 
     $Env:EDITOR="$(which emacsclient) -t -a emacs"
     $Env:VISUAL="$(which emacsclient) -c -a emacs"
 
     $Env:SUDO_EDITOR="$(which emacsclient) -t -a vim"
+
+    function emc { emacsclient $args -a emacs }
+    function emt { emacsclient -t $args -a vim }
+    function magit { emacsclient -c -t -e "(progn (magit-status) (delete-other-windows))" }
+
+    if ((uname -r) -match 'WSL')
+    {
+	# Setup X server display
+	$ENV:DISPLAY= (ip route list default | awk '{print $3}') + ":0"
+
+        # If running inside WSL, use windows's git when under C:/ drive
+        function git {
+	    if ($pwd.Path.StartsWith("/mnt/c/"))
+	    {
+	        git.exe $args
+	    }
+	    else
+	    {
+	        $git = which git
+	        &$git $args
+	    }
+        }
+    }
 }
 
 # Override out-default to save the command output to a global variable $it
@@ -343,25 +370,6 @@ if (!($MyInvocation.ScriptName))
     {
         LinuxSetup
 
-        function emc { emacsclient $args -a emacs }
-        function emt { emacsclient -t $args -a vim }
-        function magit { emacsclient -c -t -e "(progn (magit-status) (delete-other-windows))" }
-
-        # If running inside WSL, use windows's git when under C:/ drive
-        if ((uname -r) -match 'WSL')
-        {
-            function git {
-                if ($pwd.Path.StartsWith("/mnt/c/"))
-                {
-                    git.exe $args
-                }
-                else
-                {
-                    $git = which git
-                    &$git $args
-                }
-            }
-        }
     }
 
     if ($IsWindows)
