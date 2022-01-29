@@ -98,20 +98,20 @@ function LinuxSetup
 
     if ((uname -r) -match 'WSL')
     {
-	# Setup X server display
-	$ENV:DISPLAY= (ip route list default | awk '{print $3}') + ":0"
+        # Setup X server display
+        $ENV:DISPLAY= (ip route list default | awk '{print $3}') + ":0"
 
         # If running inside WSL, use windows's git when under C:/ drive
         function git {
-	    if ($pwd.Path.StartsWith("/mnt/c/"))
-	    {
-	        git.exe $args
-	    }
-	    else
-	    {
-	        $git = which git
-	        &$git $args
-	    }
+            if ($pwd.Path.StartsWith("/mnt/c/"))
+            {
+                git.exe $args
+            }
+            else
+            {
+                $git = which git
+                &$git $args
+            }
         }
     }
 }
@@ -355,27 +355,39 @@ function CompareDirectories
     }
 }
 
+function TransformWslPaths
+{
+    [CmdletBinding()]
+    param(
+        [string[]] $Paths
+    )
+
+    foreach ($path in $Paths)
+    {
+        wsl wslpath -u -- $path.Replace('\', '/')
+    }
+}
+
 # load stuff only when running in interactive mode to speed up stuff
 if (!($MyInvocation.ScriptName))
 {
     # PowerShell parameter completion shim for the dotnet CLI
     Register-ArgumentCompleter -Native -CommandName dotnet -ScriptBlock {
         param($commandName, $wordToComplete, $cursorPosition)
-            dotnet complete --position $cursorPosition "$wordToComplete" | ForEach-Object {
-                [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
-            }
+        dotnet complete --position $cursorPosition "$wordToComplete" | ForEach-Object {
+            [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+        }
     }
 
     if ($IsLinux)
     {
         LinuxSetup
-
     }
 
     if ($IsWindows)
     {
-        function emc { $null = emacsclientw $args -a emacs }
-        function magit { $null = emacsclientw $args -e "(progn (magit-status) (delete-other-windows))" }
+        function emc { $null = wsl pwsh -C emacsclient (TransformWslPaths $args) }
+        function magit { wsl emacsclient -c -t -e "(progn (magit-status) (delete-other-windows))" }
 
         Add-EnvironmentPath (Resolve-Path "~/.emacs.d/bin")
     }
