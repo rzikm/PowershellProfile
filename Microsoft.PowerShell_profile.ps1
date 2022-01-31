@@ -81,41 +81,6 @@ function InitializeModules
     }
 }
 
-function LinuxSetup
-{
-    Add-EnvironmentPath ~/bin
-    Add-EnvironmentPath ~/.dotnet/tools/
-    Add-EnvironmentPath ~/.config/emacs/bin
-
-    $Env:EDITOR="$(which emacsclient) -t -a emacs"
-    $Env:VISUAL="$(which emacsclient) -c -a emacs"
-
-    $Env:SUDO_EDITOR="$(which emacsclient) -t -a vim"
-
-    function emc { emacsclient $args -a emacs }
-    function emt { emacsclient -t $args -a vim }
-    function magit { emacsclient -c -t -e "(progn (magit-status) (delete-other-windows))" }
-
-    if ((uname -r) -match 'WSL')
-    {
-        # Setup X server display
-        $ENV:DISPLAY= (ip route list default | awk '{print $3}') + ":0"
-
-        # If running inside WSL, use windows's git when under C:/ drive
-        function git {
-            if ($pwd.Path.StartsWith("/mnt/c/"))
-            {
-                git.exe $args
-            }
-            else
-            {
-                $git = which git
-                &$git $args
-            }
-        }
-    }
-}
-
 # Override out-default to save the command output to a global variable $it
 function Out-Default {
     [CmdletBinding(ConfirmImpact = 'Medium')]
@@ -381,7 +346,24 @@ if (!($MyInvocation.ScriptName))
 
     if ($IsLinux)
     {
-        LinuxSetup
+        Add-EnvironmentPath ~/bin
+        Add-EnvironmentPath ~/.dotnet/tools/
+        Add-EnvironmentPath ~/.config/emacs/bin
+
+        $Env:EDITOR="$(which emacsclient) -t -a emacs"
+        $Env:VISUAL="$(which emacsclient) -c -a emacs"
+
+        $Env:SUDO_EDITOR="$(which emacsclient) -t -a vim"
+
+        function emc { emacsclient $args -a emacs }
+        function emt { emacsclient -t $args -a vim }
+        function magit { emacsclient -c -t -e "(progn (magit-status) (delete-other-windows))" }
+
+        if ((uname -r) -match 'WSL')
+        {
+            # Setup X server display
+            $ENV:DISPLAY= (ip route list default | awk '{print $3}') + ":0"
+        }
     }
 
     if ($IsWindows)
