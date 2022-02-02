@@ -384,6 +384,8 @@ if (!($MyInvocation.ScriptName))
     . $PSScriptRoot/Open-VSSolution.ps1
     . $PSScriptRoot/Build-DotnetRuntime.ps1
 
+    Import-Module posh-git
+
     if (Test-Path -PathType Leaf $PSScriptRoot/local.ps1)
     {
         . $PSScriptRoot/local.ps1
