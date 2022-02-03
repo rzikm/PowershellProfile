@@ -64,8 +64,8 @@ function Build-DotnetRuntime
 
         [Parameter()]
         [ValidateSet("Debug", "Release")]
-        [Alias("c")]
-        [string] $Configuration = "Debug"
+        [Alias("lc")]
+        [string] $LibrariesConfiguration = "Debug"
     )
 
     if ($IsWindows)
@@ -77,5 +77,5 @@ function Build-DotnetRuntime
         $buildCmd = Join-Path $RuntimeSourcesRoot 'build.sh'
     }
 
-    & ($buildCmd) -s ($Subset -join '+') -rc $RuntimeConfiguration -c $Configuration
+    & ($buildCmd) -s ($Subset -join '+') -rc $RuntimeConfiguration -lc $LibrariesConfiguration
 }
