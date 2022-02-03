@@ -3,10 +3,6 @@ function Build-DotnetRuntime
     [Alias('bdr')]
     [CmdletBinding()]
     param(
-        # Path to the sources root directory
-        [Parameter()]
-        [string] $RuntimeSourcesRoot = $global:RuntimeSourcesRoot,
-
         [Parameter()]
         [ValidateSet(
              "Clr", # The CoreCLR runtime, LinuxDac, CoreLib (+ native), tools and packages.
@@ -65,7 +61,11 @@ function Build-DotnetRuntime
         [Parameter()]
         [ValidateSet("Debug", "Release")]
         [Alias("lc")]
-        [string] $LibrariesConfiguration = "Debug"
+        [string] $LibrariesConfiguration = "Debug",
+
+        # Path to the sources root directory
+        [Parameter()]
+        [string] $RuntimeSourcesRoot = $global:RuntimeSourcesRoot
     )
 
     if ($IsWindows)
