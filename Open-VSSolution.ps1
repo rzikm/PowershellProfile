@@ -19,5 +19,5 @@ function Open-VSSolution
     )
 
     $buildCmd = Join-Path $RuntimeSourcesRoot 'build.cmd'
-    cmd.exe $buildCmd -vs $Solution
+    &$buildCmd -vs $Solution
 }
