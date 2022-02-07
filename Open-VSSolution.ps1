@@ -4,11 +4,7 @@ function Open-VSSolution
     param(
         [Parameter(Mandatory)]
         [ArgumentCompleter( {
-            param ( $commandName,
-                    $parameterName,
-                    $wordToComplete,
-                    $commandAst,
-                    $fakeBoundParameters )
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
             $libsSrcPath = Join-Path $global:RuntimeSourcesRoot "src/libraries"
             Get-ChildItem $libsSrcPath -Filter "$wordToComplete*" | ForEach-Object Name
         } )]

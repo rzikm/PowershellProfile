@@ -383,6 +383,7 @@ if (!($MyInvocation.ScriptName))
     . $PSScriptRoot/Use-DotnetRoot.ps1
     . $PSScriptRoot/Open-VSSolution.ps1
     . $PSScriptRoot/Build-DotnetRuntime.ps1
+    . $PSScriptRoot/Run-DotnetBenchmark.ps1
 
     Import-Module posh-git
 
