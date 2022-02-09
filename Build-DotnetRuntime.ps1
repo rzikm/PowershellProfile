@@ -53,6 +53,10 @@ function Build-DotnetRuntime
          )]
         [string[]] $Subset = @("Clr", "Libs", "Libs.Tests"),
 
+        # Performs clean build
+        [Parameter()]
+        [switch] $Clean,
+
         [Parameter()]
         [ValidateSet("Debug", "Checked", "Release")]
         [Alias("rc")]
@@ -67,6 +71,11 @@ function Build-DotnetRuntime
         [Parameter()]
         [string] $RuntimeSourcesRoot = $global:RuntimeSourcesRoot
     )
+
+    if ($Clean)
+    {
+        Remove-Item -Recurse -Force $RuntimeSourcesRoot/artifacts
+    }
 
     if ($IsWindows)
     {
