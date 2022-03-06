@@ -183,80 +183,6 @@ function Watch-Command
     }
 }
 
-function SendGradingEmails
-{
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
-    param(
-        # Org file with comments for each student
-        [Parameter(Mandatory)]
-        [string] $Filename,
-
-        # Subject of the email
-        [Parameter(Mandatory)]
-        [string] $Subject,
-
-        # Prefix to the body of the email
-        [Parameter()]
-        [string] $PreBody = "Zdravím,`n",
-
-        # Suffix to the body
-        [Parameter()]
-        [string] $PostBody = "`nRadek",
-
-        # AttachmentFileName
-        [Parameter()]
-        [string] $AttachmentFileName
-    )
-
-    $EmailFrom = "r.zikmund.rz@gmail.com"
-    $SMTPServer = "smtp.gmail.com"
-
-    $SMTPClient = New-Object Net.Mail.SmtpClient($SmtpServer, 587)
-    $SMTPClient.EnableSsl = $true
-    $creds = Get-StoredCredential -Target gmail-app-personal
-    $SMTPClient.Credentials = New-Object System.Net.NetworkCredential -ArgumentList $creds.UserName, $creds.Password
-
-    $m = Get-Content -raw $Filename | Select-String '\* [^@]*\t(?<mail>[^\t]+)(\t(?<dir>.+))?(?<body>[^*]+)' -AllMatches
-    $m.Matches | ForEach-Object {
-        $mail = $_.Groups['mail'].Value.Trim()
-        $dir = $_.Groups['dir'].Value.Trim()
-        $body = $PreBody + $_.Groups['body'].Value + $PostBody
-
-        $mail
-
-        if ($AttachmentFileName)
-        {
-            $attachmentFile = Get-Item (Join-Path (Split-Path -Parent $Filename) $dir $AttachmentFileName)
-        }
-
-        $msg = "Send mail to '$mail':`n$body"
-
-        if ($AttachmentFileName)
-        {
-            $msg += "`nWith attachment: $attachmentFile"
-        }
-
-        if ($Force -or $PSCmdlet.ShouldProcess($msg))
-        {
-            $mm = New-Object System.Net.Mail.MailMessage
-            $mm.From = New-Object System.Net.Mail.MailAddress -ArgumentList $EmailFrom
-            $mm.To.Add((New-Object System.Net.Mail.MailAddress -ArgumentList $mail))
-            $mm.Subject = $Subject
-            $mm.Body = $body
-
-            if ($AttachmentFileName)
-            {
-                $mm.Attachments.Add([System.Net.Mail.Attachment]::new($attachmentFile.FullName))
-            }
-
-            $SMTPClient.Send($mm)
-            $mm.Dispose()
-        }
-    }
-
-    $SMTPClient.Dispose();
-}
-
 function ShowDiff
 {
     [CmdletBinding()]
@@ -375,6 +301,8 @@ if (!($MyInvocation.ScriptName))
     }
 
     Set-PoshPrompt $PSScriptRoot/theme.omp.json
+
+    . $PSScriptRoot/Send-GradingEmails.ps1
 
     . $PSScriptRoot/PSReadLineConfig.ps1
 
