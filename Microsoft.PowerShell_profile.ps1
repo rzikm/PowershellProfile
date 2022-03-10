@@ -1,5 +1,4 @@
-function Add-EnvironmentPath
-{
+function Add-EnvironmentPath {
     <#
 
 .SYNOPSIS
@@ -18,33 +17,27 @@ Appends string to the PATH environment variable
         [switch] $Prepend
     )
 
-    if (!(Test-Path $Path))
-    {
+    if (!(Test-Path $Path)) {
         # path does not exist
         return;
     }
 
-    if ($IsLinux)
-    {
+    if ($IsLinux) {
         $separator = ":"
     }
-    if ($IsWindows)
-    {
+    if ($IsWindows) {
         $separator = ";"
     }
 
-    if ($Prepend)
-    {
+    if ($Prepend) {
         $Env:PATH = "$Path$separator${Env:Path}"
     }
-    else
-    {
+    else {
         $Env:PATH += "$separator$Path"
     }
 }
 
-function InitializeModules
-{
+function InitializeModules {
     $modules = @(
         "oh-my-posh",
         "posh-with",
@@ -61,21 +54,18 @@ function InitializeModules
         "CredentialManager"
     )
 
-    if ($IsLinux)
-    {
+    if ($IsLinux) {
         $modules += $linuxOnlyModules
     }
 
-    if ($IsWindows)
-    {
+    if ($IsWindows) {
         $modules += $windowsOnlyModules
     }
 
     $installed = (Get-InstalledModule).Name ?? @()
-    $toInstall = Compare-Object $modules $installed | Where-Object {$_.SideIndicator -eq "<=" } | ForEach-Object { $_.InputObject }
+    $toInstall = Compare-Object $modules $installed | Where-Object { $_.SideIndicator -eq "<=" } | ForEach-Object { $_.InputObject }
 
-    if ($toInstall)
-    {
+    if ($toInstall) {
         "Installing missing modules: $toInstall"
         Install-Module $toInstall
     }
@@ -89,25 +79,24 @@ function Out-Default {
         [PSObject] $InputObject
     )
 
-    begin{
+    begin {
         $wrappedCmdlet = $ExecutionContext.InvokeCommand.GetCmdlet('Out-Default')
         $sp = { & $wrappedCmdlet @PSBoundParameters }.GetSteppablePipeline()
         $sp.Begin($PSCmdlet)
 
         $it = @()
     }
-    process{
+    process {
         $sp.Process($_)
         $it += $_
     }
-    end{
+    end {
         $sp.End()
         $global:it = $it
     }
 }
 
-function Watch-File
-{
+function Watch-File {
     param(
         # Filter for file names
         [Parameter(Mandatory = $true)]
@@ -132,24 +121,21 @@ function Watch-File
         Invoke-Command $Event.MessageData | Out-Host
     } > $null
 
-    try
-    {
+    try {
         # start watching
         Write-Host "Watching..."
         $watcher.EnableRaisingEvents = $true
         $watcher
         while ($true) { Start-Sleep -Milliseconds 200 }
     }
-    finally
-    {
+    finally {
         # cleanup
         $watcher.EnableRaisingEvents = $false
         $watcher.Dispose()
     }
 }
 
-function Watch-Command
-{
+function Watch-Command {
     param(
         [scriptblock] $Command,
         [scriptblock] $ScriptBlock,
@@ -159,10 +145,8 @@ function Watch-Command
 
     $output = & $Command
 
-    while ($true)
-    {
-        if ([bool]$output -and $UntilTrue)
-        {
+    while ($true) {
+        if ([bool]$output -and $UntilTrue) {
             & $ScriptBlock
         }
 
@@ -170,11 +154,9 @@ function Watch-Command
 
         $newOutput = & $Command
 
-        if (!$UntilTrue)
-        {
+        if (!$UntilTrue) {
             $diff = Compare-Object $output $newOutput
-            if ($diff)
-            {
+            if ($diff) {
                 & $ScriptBlock
             }
         }
@@ -183,8 +165,7 @@ function Watch-Command
     }
 }
 
-function ShowDiff
-{
+function ShowDiff {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory, ValueFromPipeline, Position = 1)]
@@ -204,8 +185,7 @@ function ShowDiff
     }
 }
 
-function CompareDirectories
-{
+function CompareDirectories {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -222,46 +202,39 @@ function CompareDirectories
     $tgtRelative = $tgt | ForEach-Object { [System.IO.Path]::GetRelativePath($Target.FullName, $_) }
 
     $diff = Compare-Object -ReferenceObject $refRelative -DifferenceObject $tgtRelative
-    if ($diff)
-    {
+    if ($diff) {
         Write-Host "File names differ:"
         $diff
     }
 
-    foreach ($file in $refRelative)
-    {
+    foreach ($file in $refRelative) {
         $refFile = Get-Item (Join-Path $Reference $file)
         $tgtFile = Get-Item (Join-Path $Target $file) -ErrorAction SilentlyContinue
 
-        if (!$tgtFile)
-        {
+        if (!$tgtFile) {
             # File does not exist in target
             continue;
         }
 
-        if ((Get-FileHash $refFile).Hash -ne (Get-FileHash $tgtFile).Hash)
-        {
+        if ((Get-FileHash $refFile).Hash -ne (Get-FileHash $tgtFile).Hash) {
             Write-Host "File $file differs"
         }
     }
 }
 
-function TransformWslPaths
-{
+function TransformWslPaths {
     [CmdletBinding()]
     param(
         [string[]] $Paths
     )
 
-    foreach ($path in $Paths)
-    {
+    foreach ($path in $Paths) {
         wsl wslpath -u -- $path.Replace('\', '/')
     }
 }
 
 # load stuff only when running in interactive mode to speed up stuff
-if (!($MyInvocation.ScriptName))
-{
+if (!($MyInvocation.ScriptName)) {
     # PowerShell parameter completion shim for the dotnet CLI
     Register-ArgumentCompleter -Native -CommandName dotnet -ScriptBlock {
         param($commandName, $wordToComplete, $cursorPosition)
@@ -270,30 +243,27 @@ if (!($MyInvocation.ScriptName))
         }
     }
 
-    if ($IsLinux)
-    {
+    if ($IsLinux) {
         Add-EnvironmentPath ~/bin
         Add-EnvironmentPath ~/.dotnet/tools/
         Add-EnvironmentPath ~/.config/emacs/bin
 
-        $Env:EDITOR="$(which emacsclient) -t -a emacs"
-        $Env:VISUAL="$(which emacsclient) -c -a emacs"
+        $Env:EDITOR = "$(which emacsclient) -t -a emacs"
+        $Env:VISUAL = "$(which emacsclient) -c -a emacs"
 
-        $Env:SUDO_EDITOR="$(which emacsclient) -t -a vim"
+        $Env:SUDO_EDITOR = "$(which emacsclient) -t -a vim"
 
         function emc { emacsclient $args -a emacs }
         function emt { emacsclient -t $args -a vim }
         function magit { emacsclient -c -t -e "(progn (magit-status) (delete-other-windows))" }
 
-        if ((uname -r) -match 'WSL')
-        {
+        if ((uname -r) -match 'WSL') {
             # Setup X server display
-            $ENV:DISPLAY= (ip route list default | awk '{print $3}') + ":0"
+            $ENV:DISPLAY = (ip route list default | awk '{print $3}') + ":0"
         }
     }
 
-    if ($IsWindows)
-    {
+    if ($IsWindows) {
         function emc { $null = wsl pwsh -C emacsclient (TransformWslPaths $args) }
         function magit { wsl emacsclient -c -t -e "(progn (magit-status) (delete-other-windows))" }
 
@@ -313,10 +283,12 @@ if (!($MyInvocation.ScriptName))
     . $PSScriptRoot/Build-DotnetRuntime.ps1
     . $PSScriptRoot/Run-DotnetBenchmark.ps1
 
+    . $PSScriptRoot/Get-HelixPayload.ps1
+    . $PSScriptRoot/Debug-HelixPayload.ps1
+
     Import-Module posh-git
 
-    if (Test-Path -PathType Leaf $PSScriptRoot/local.ps1)
-    {
+    if (Test-Path -PathType Leaf $PSScriptRoot/local.ps1) {
         . $PSScriptRoot/local.ps1
     }
 }
