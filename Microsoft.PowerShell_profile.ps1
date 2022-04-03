@@ -247,6 +247,7 @@ if (!($MyInvocation.ScriptName)) {
         Add-EnvironmentPath ~/bin
         Add-EnvironmentPath ~/.dotnet/tools/
         Add-EnvironmentPath ~/.config/emacs/bin
+        Add-EnvironmentPath ~/.local/bin
 
         $Env:EDITOR = "$(which emacsclient) -t -a emacs"
         $Env:VISUAL = "$(which emacsclient) -c -a emacs"
