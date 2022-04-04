@@ -45,11 +45,22 @@ function Test-DotnetLibrary {
     if ($testhostDir.Length -ne 1) {
         Write-Error "Found more than one testhost:`n$testhostDir"
     }
+    $testhostDir = $testhostDir | Select-Object -First 1
 
     # Now find the library folder
     $libraryDir = Get-ChildItem -Path (Join-Path $RuntimeSourcesRoot "/artifacts/bin/" $Name $LibrariesConfiguration)
-    if ($testhostDir.Length -ne 1) {
-        Write-Error "Found more than one library bin dir:`n$libraryDir"
+    if ($libraryDir.Length -ne 1) {
+        # prefer the one targeting current OS
+        if ($IsWindows) {
+            $libraryDir = $libraryDir | Where-Object { $_.Name -like "*windows" } | Select-Object -First 1
+        }
+        else {
+            # Take either linux or unix
+            $libraryDir = $libraryDir | Where-Object { $_.Name -like "*n?x" } | Select-Object -First 1
+        }
+    }
+    else {
+        $libraryDir = $libraryDir | Select-Object -First 1
     }
 
     if ($IsWindows) {
@@ -77,9 +88,12 @@ function Test-DotnetLibrary {
         $arguments += $AdditionalArguments
     }
 
-    Write-Verbose "$testhost $arguments"
+    Write-Verbose "Working dir: $libraryDir"
+    Write-Verbose "Command: $testhost $arguments"
 
     for ($i = 0; $i -lt $IterationCount; $i++) {
+        Write-Verbose "iteration $($i + 1)/$IterationCount"
+
         # Start the dotnet exec process
         $process = Start-Process `
             -FilePath $testhost `
@@ -97,7 +111,13 @@ function Test-DotnetLibrary {
 
         # If not finished in time, dump the process for analysis
         if (!$process.HasExited) {
+            Write-Verbose "Timeout reached, collecting dump of process $($process.Id)"
             dotnet-dump collect -p $process.Id
+            $process | Wait-Process
+        }
+
+        if ($process.ExitCode -ne 0) {
+            break;
         }
     }
 }
