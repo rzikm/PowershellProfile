@@ -57,11 +57,13 @@ function Build-DotnetRuntime
         [Parameter()]
         [switch] $Clean,
 
+        # Build configuration for the CLR
         [Parameter()]
         [ValidateSet("Debug", "Checked", "Release")]
         [Alias("rc")]
         [string] $RuntimeConfiguration = "Release",
 
+        # Build configuration for the libraries
         [Parameter()]
         [ValidateSet("Debug", "Release")]
         [Alias("lc")]
