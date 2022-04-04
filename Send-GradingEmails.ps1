@@ -34,7 +34,7 @@ function Send-GradingEmails {
     $m.Matches | ForEach-Object {
         $mail = [PsCustomObject]@{
             mail = $_.Groups['mail'].Value.Trim()
-            body = $PreBody + $_.Groups['body'].Value + $PostBody
+            body = $PreBody + $_.Groups['body'].Value.Trim() + $PostBody
         }
 
         if ($AttachmentFileName) {
