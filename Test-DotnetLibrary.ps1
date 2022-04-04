@@ -6,10 +6,28 @@ function Test-DotnetLibrary {
         [Parameter(Mandatory)]
         [ArgumentCompleter( {
                 param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-                $libsSrcPath = Join-Path $global:RuntimeSourcesRoot "artifacts/bin"
-                Get-ChildItem $libsSrcPath -Filter "$wordToComplete*" | Where-Object { $_.Name -like "*Tests" } | ForEach-Object Name
+                $libsSrcPath = Join-Path $global:RuntimeSourcesRoot "src/libraries"
+                Get-ChildItem $libsSrcPath -Filter "$wordToComplete*" | ForEach-Object Name
             } )]
         [string] $Name,
+
+        # Library to test
+        [Parameter()]
+        [ArgumentCompleter( {
+                param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+                $library = $fakeBoundParameters.Name
+                $libsSrcPath = Join-Path $global:RuntimeSourcesRoot "src/libraries/$library/tests"
+                Get-ChildItem $libsSrcPath -Filter "$wordToComplete*" | ForEach-Object Name
+            } )]
+        [string] $TestProject = 'FunctionalTests',
+
+        # Filter for the tests, supports wildcards
+        [Parameter()]
+        [string] $Filter,
+
+        # Additional arguments to the test process
+        [Parameter()]
+        [string[]] $AdditionalArguments,
 
         # Number of iteration to run the test
         [Parameter()]
@@ -19,19 +37,14 @@ function Test-DotnetLibrary {
         [Parameter()]
         [int] $TimeoutSeconds,
 
-        # Additional arguments to the test process
         [Parameter()]
-        [string[]] $AdditionalArguments,
+        [switch] $BreakOnTestFailure,
 
         # Configuration of the library to test
         [Parameter()]
         [ValidateSet("Debug", "Release")]
         [Alias("lc")]
         [string] $LibrariesConfiguration = "Debug",
-
-        # Filter for the tests
-        [Parameter()]
-        [string] $TestFilter,
 
         # Path to the sources root directory
         [Parameter()]
@@ -47,21 +60,7 @@ function Test-DotnetLibrary {
     }
     $testhostDir = $testhostDir | Select-Object -First 1
 
-    # Now find the library folder
-    $libraryDir = Get-ChildItem -Path (Join-Path $RuntimeSourcesRoot "/artifacts/bin/" $Name $LibrariesConfiguration)
-    if ($libraryDir.Length -ne 1) {
-        # prefer the one targeting current OS
-        if ($IsWindows) {
-            $libraryDir = $libraryDir | Where-Object { $_.Name -like "*windows" } | Select-Object -First 1
-        }
-        else {
-            # Take either linux or unix
-            $libraryDir = $libraryDir | Where-Object { $_.Name -like "*n?x" } | Select-Object -First 1
-        }
-    }
-    else {
-        $libraryDir = $libraryDir | Select-Object -First 1
-    }
+    $libraryDir = Join-Path $RuntimeSourcesRoot 'src/libraries' $Name 'tests' $TestProject
 
     if ($IsWindows) {
         $testhost = Join-Path $testhostDir "dotnet.exe"
@@ -70,18 +69,14 @@ function Test-DotnetLibrary {
         $testhost = Join-Path $testhostDir "dotnet"
     }
 
-    # /root/helix/work/correlation/dotnet exec --runtimeconfig System.Net.Security.Tests.runtimeconfig.json --depsfile System.Net.Security.Tests.deps.json xunit.console.dll System.Net.Security.Tests.dll -xml testResults.xml -nologo -nocolor -notrait category=IgnoreForCI 
-
     $arguments = @(
-        'exec',
-        '--runtimeconfig', "$Name.runtimeconfig.json",
-        '--depsfile', "$Name.deps.json",
-        'xunit.console.dll',
-        "$Name.dll"
+        'test',
+        '--no-build',
+        '--configuration', $LibrariesConfiguration
     )
 
-    if ($TestFilter) {
-        $arguments += '-method', "*$TestFilter*"
+    if ($Filter) {
+        $arguments += '--filter', $Filter
     }
 
     if ($AdditionalArguments) {
@@ -94,7 +89,6 @@ function Test-DotnetLibrary {
     for ($i = 0; $i -lt $IterationCount; $i++) {
         Write-Verbose "iteration $($i + 1)/$IterationCount"
 
-        # Start the dotnet exec process
         $process = Start-Process `
             -FilePath $testhost `
             -WorkingDirectory $libraryDir `
@@ -111,12 +105,17 @@ function Test-DotnetLibrary {
 
         # If not finished in time, dump the process for analysis
         if (!$process.HasExited) {
+            $testPs = Get-Process dotnet | Where-Object { $_.Path -eq $testhost } | Select-Object -First 1
             Write-Verbose "Timeout reached, collecting dump of process $($process.Id)"
-            dotnet-dump collect -p $process.Id
+            dotnet-dump collect -p $testPs.Id
             $process | Wait-Process
+
+            if ($process.ExitCode -ne 0) {
+                break;
+            }
         }
 
-        if ($process.ExitCode -ne 0) {
+        if ($process.ExitCode -ne 0 -and $BreakOnTestFailure) {
             break;
         }
     }
