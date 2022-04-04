@@ -84,13 +84,13 @@ function Test-DotnetLibrary {
     }
 
     Write-Verbose "Working dir: $libraryDir"
-    Write-Verbose "Command: $testhost $arguments"
+    Write-Verbose "Command: dotnet $arguments"
 
     for ($i = 0; $i -lt $IterationCount; $i++) {
         Write-Verbose "iteration $($i + 1)/$IterationCount"
 
         $process = Start-Process `
-            -FilePath $testhost `
+            -FilePath 'dotnet' `
             -WorkingDirectory $libraryDir `
             -ArgumentList $arguments `
             -NoNewWindow `
