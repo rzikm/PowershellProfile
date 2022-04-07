@@ -283,7 +283,7 @@ if (!($MyInvocation.ScriptName)) {
     . $PSScriptRoot/Open-VSSolution.ps1
     . $PSScriptRoot/Build-DotnetRuntime.ps1
     . $PSScriptRoot/Run-DotnetBenchmark.ps1
-
+    . $PSScriptRoot/DotnetDevUtils.ps1
     . $PSScriptRoot/Get-HelixPayload.ps1
     . $PSScriptRoot/Debug-HelixPayload.ps1
     . $PSScriptRoot/Test-DotnetLibrary.ps1
