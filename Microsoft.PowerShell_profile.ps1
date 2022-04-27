@@ -22,6 +22,8 @@ Appends string to the PATH environment variable
         return;
     }
 
+    $Path = Resolve-Path $Path
+
     if ($IsLinux) {
         $separator = ":"
     }
@@ -39,7 +41,6 @@ Appends string to the PATH environment variable
 
 function InitializeModules {
     $modules = @(
-        "oh-my-posh",
         "posh-with",
         "TabExpansionPlusPlus",
         "ZLocation",
@@ -268,10 +269,10 @@ if (!($MyInvocation.ScriptName)) {
         function emc { $null = wsl pwsh -C emacsclient (TransformWslPaths $args) }
         function magit { wsl emacsclient -c -t -e "(progn (magit-status) (delete-other-windows))" }
 
-        Add-EnvironmentPath (Resolve-Path "~/.emacs.d/bin")
+        Add-EnvironmentPath "~/.emacs.d/bin"
     }
 
-    Set-PoshPrompt $PSScriptRoot/theme.omp.json
+    oh-my-posh init pwsh --config $PSScriptRoot/theme.omp.json | Invoke-Expression
 
     . $PSScriptRoot/Send-GradingEmails.ps1
 
