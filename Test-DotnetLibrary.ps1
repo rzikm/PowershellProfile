@@ -37,8 +37,13 @@ function Test-DotnetLibrary {
         [Parameter()]
         [int] $TimeoutSeconds,
 
+        # If set, then iterating will stop when first test failure is encountered
         [Parameter()]
         [switch] $BreakOnTestFailure,
+
+        # If set, then outerloop test category is enabled
+        [Parameter()]
+        [switch] $Outerloop,
 
         # Configuration of the library to test
         [Parameter()]
@@ -81,6 +86,10 @@ function Test-DotnetLibrary {
 
     if ($AdditionalArguments) {
         $arguments += $AdditionalArguments
+    }
+
+    if ($Outerloop) {
+        $arguments += "/p:OuterLoop=true"
     }
 
     Write-Verbose "Working dir: $libraryDir"
