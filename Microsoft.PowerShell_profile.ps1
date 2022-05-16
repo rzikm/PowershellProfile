@@ -289,6 +289,7 @@ if (!($MyInvocation.ScriptName)) {
     . $PSScriptRoot/Debug-HelixPayload.ps1
     . $PSScriptRoot/Test-DotnetLibrary.ps1
     . $PSScriptRoot/Install-Dotnet.ps1
+    . $PSScriptRoot/Run-DotnetTesthost.ps1
 
     Import-Module posh-git
 
