@@ -266,8 +266,8 @@ if (!($MyInvocation.ScriptName)) {
     }
 
     if ($IsWindows) {
-        function emc { $null = wsl pwsh -C emacsclient (TransformWslPaths $args) }
-        function magit { wsl emacsclient -c -t -e "(progn (magit-status) (delete-other-windows))" }
+        function emc { emacsclient $args }
+        function magit { emacsclient -c -t -e "(progn (magit-status) (delete-other-windows))" }
 
         Add-EnvironmentPath "~/.emacs.d/bin"
     }
