@@ -291,6 +291,10 @@ if (!($MyInvocation.ScriptName)) {
     . $PSScriptRoot/Install-Dotnet.ps1
     . $PSScriptRoot/Run-DotnetTesthost.ps1
 
+    if ($IsWindows) {
+        . $PSScriptRoot/Invoke-Perfview.ps1
+    }
+
     Import-Module posh-git
 
     if (Test-Path -PathType Leaf $PSScriptRoot/local.ps1) {
