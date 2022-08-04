@@ -24,14 +24,19 @@ function Debug-HelixPayload {
     $hostPath = Get-ChildItem $hostPath | Select-Object -First 1 -ExpandProperty FullName
 
     switch ($Debugger) {
-        'dotnet-dump' {  
+        'dotnet-dump' {
+            Write-Verbose "dotnet-dump analyze $coreFile --command `"setclrpath $hostPath`" `"setsymbolserver -directory $hostPath`""
             dotnet-dump analyze $coreFile --command "setclrpath $hostPath" "setsymbolserver -directory $hostPath"
         }
         'lldb' {
-            lldb --core $coreFile (Get-Item (Join-Path $hostPath "dotnet*")) -o "setclrpath $hostPath" -o "setsymbolserver -directory $hostPath"
+            $exePath = Get-Item (Join-Path $hostPath "dotnet*")
+            Write-Verbose "lldb --core $coreFile $exePath -o `"setclrpath $hostPath`" -o `"setsymbolserver -directory $hostPath`""
+            lldb --core $coreFile $exePath -o "setclrpath $hostPath" -o "setsymbolserver -directory $hostPath"
         }
         'windbg' {
-            &"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\windbg.exe" -i (Get-Item (Join-Path $hostPath "dotnet*")) -c "!setclrpath $hostPath; !setsymbolserver -directory $hostPath" -z $coreFile
+            $exePath = Get-Item (Join-Path $hostPath "dotnet*")
+            Write-Verbose "`"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\windbg.exe`" -i $exePath -c `"!setclrpath $hostPath; !setsymbolserver -directory $hostPath`" -z $coreFile"
+            &"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\windbg.exe" -i $exePath -c "!setclrpath $hostPath; !setsymbolserver -directory $hostPath" -z $coreFile
         }
     }
 }
