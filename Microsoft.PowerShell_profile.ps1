@@ -250,14 +250,19 @@ if (!($MyInvocation.ScriptName)) {
         Add-EnvironmentPath ~/.config/emacs/bin
         Add-EnvironmentPath ~/.local/bin
 
-        $Env:EDITOR = "$(which emacsclient) -t -a emacs"
-        $Env:VISUAL = "$(which emacsclient) -c -a emacs"
+        $emacsclient = Get-Command emacsclient -ErrorAction SilentlyContinue
 
-        $Env:SUDO_EDITOR = "$(which emacsclient) -t -a vim"
+	if ($emacsclient)
+	{
+            $Env:EDITOR = "$(which emacsclient) -t -a emacs"
+            $Env:VISUAL = "$(which emacsclient) -c -a emacs"
 
-        function emc { emacsclient $args -a emacs }
-        function emt { emacsclient -t $args -a vim }
-        function magit { emacsclient -c -t -e "(progn (magit-status) (delete-other-windows))" }
+            $Env:SUDO_EDITOR = "$(which emacsclient) -t -a vim"
+
+            function emc { emacsclient $args -a emacs }
+            function emt { emacsclient -t $args -a vim }
+            function magit { emacsclient -c -t -e "(progn (magit-status) (delete-other-windows))" }
+	}
 
         if ((uname -r) -match 'WSL') {
             # Setup X server display
