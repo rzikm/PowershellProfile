@@ -68,7 +68,7 @@ function InitializeModules {
 
     if ($toInstall) {
         "Installing missing modules: $toInstall"
-        Install-Module $toInstall
+        Install-Module $toInstall -AllowClobber
     }
 }
 
@@ -249,11 +249,11 @@ if (!($MyInvocation.ScriptName)) {
         Add-EnvironmentPath ~/.dotnet/tools/
         Add-EnvironmentPath ~/.config/emacs/bin
         Add-EnvironmentPath ~/.local/bin
+        Add-EnvironmentPath ~/.cargo/bin
 
         $emacsclient = Get-Command emacsclient -ErrorAction SilentlyContinue
 
-	if ($emacsclient)
-	{
+        if ($emacsclient) {
             $Env:EDITOR = "$(which emacsclient) -t -a emacs"
             $Env:VISUAL = "$(which emacsclient) -c -a emacs"
 
@@ -262,7 +262,7 @@ if (!($MyInvocation.ScriptName)) {
             function emc { emacsclient $args -a emacs }
             function emt { emacsclient -t $args -a vim }
             function magit { emacsclient -c -t -e "(progn (magit-status) (delete-other-windows))" }
-	}
+        }
 
         if ((uname -r) -match 'WSL') {
             # Setup X server display
