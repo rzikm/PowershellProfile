@@ -22,6 +22,7 @@ function Debug-HelixPayload {
     # We need a path like $Path/shared/Microsoft.NETCore.App/7.0.0, there should be only one directory
     $hostPath = Join-Path $Path "shared/Microsoft.NETCore.App"
     $hostPath = Get-ChildItem $hostPath | Select-Object -First 1 -ExpandProperty FullName
+    $exePath = Get-ChildItem $Path -Filter "dotnet*" | Select-Object -First 1 -ExpandProperty FullName
 
     switch ($Debugger) {
         'dotnet-dump' {
@@ -29,12 +30,10 @@ function Debug-HelixPayload {
             dotnet-dump analyze $coreFile --command "setclrpath $hostPath" "setsymbolserver -directory $hostPath"
         }
         'lldb' {
-            $exePath = Get-Item (Join-Path $hostPath "dotnet*")
             Write-Verbose "lldb --core $coreFile $exePath -o `"setclrpath $hostPath`" -o `"setsymbolserver -directory $hostPath`""
             lldb --core $coreFile $exePath -o "setclrpath $hostPath" -o "setsymbolserver -directory $hostPath"
         }
         'windbg' {
-            $exePath = Get-Item (Join-Path $hostPath "dotnet*")
             Write-Verbose "`"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\windbg.exe`" -i $exePath -c `"!setclrpath $hostPath; !setsymbolserver -directory $hostPath`" -z $coreFile"
             &"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\windbg.exe" -i $exePath -c "!setclrpath $hostPath; !setsymbolserver -directory $hostPath" -z $coreFile
         }
