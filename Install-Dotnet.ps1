@@ -1,7 +1,11 @@
 function Install-Dotnet {
     param(
-        [Parameter()]
+        [Parameter(ParameterSetName = "Version")]
         [string] $Version,
+
+        [Parameter(ParameterSetName = "Channel")]
+        [ValidateSet("Current", "LTS", "7.0")]
+        [string] $Channel,
 
         [Parameter()]
         [string] $InstallDir,
@@ -30,15 +34,22 @@ function Install-Dotnet {
 
     Invoke-WebRequest $uri -OutFile $installScript
 
-    $parameters = @(
-        "-Version", $Version
-        "-InstallDir", $InstallDir
-    )
+    $parameters = @()
+
+    if ($PSBoundParameters['Verbose']) {
+        $parameters += "-Verbose"
+    }
+
+    if ($Version) {
+        $parameters += "-Version", $Version
+    }
+
+    if ($InstallDir) {
+        $parameters += "-InstallDir", $InstallDir
+    }
 
     if ($DryRun) {
-        $parameters += @(
-            "-DryRun"
-        )
+        $parameters += "-DryRun"
     }
 
     if ($IsWindows) {
