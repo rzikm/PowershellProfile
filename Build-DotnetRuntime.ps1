@@ -78,13 +78,13 @@ function Build-DotnetRuntime {
     )
 
     if ($Clean) {
-        Remove-Item -Recurse -Force $RuntimeSourcesRoot/artifacts
+        Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $RuntimeSourcesRoot/artifacts
     }
 
     if ($IsWindows) {
         $buildCmd = Join-Path $RuntimeSourcesRoot 'build.cmd'
     }
-    elseif ($IsLinux) {
+    else {
         $buildCmd = Join-Path $RuntimeSourcesRoot 'build.sh'
     }
 
