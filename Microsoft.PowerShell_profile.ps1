@@ -298,6 +298,7 @@ if (!($MyInvocation.ScriptName)) {
 
     if ($IsWindows) {
         . $PSScriptRoot/Invoke-Perfview.ps1
+        . $PSScriptRoot/Update-SessionEnvironment.ps1
     }
 
     Import-Module posh-git
