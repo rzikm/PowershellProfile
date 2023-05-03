@@ -21,6 +21,15 @@ function Test-DotnetLibrary {
             } )]
         [string] $TestProject = 'FunctionalTests',
 
+        # Run xUnit directly instead of using dotnet test
+        [Parameter(ParameterSetName = "Direct")]
+        [switch] $Direct,
+
+        # Override for framework version
+        [Parameter(ParameterSetName = "Direct")]
+        [ValidateSet('*', '6.0', '7.0', '8.0')]
+        [string] $Framework = '*', # use latest by default
+
         # Filter for the tests, supports wildcards
         [Parameter()]
         [string] $Filter,
@@ -28,6 +37,10 @@ function Test-DotnetLibrary {
         # Additional arguments to the test process
         [Parameter()]
         [string[]] $AdditionalArguments,
+
+        # Max threadpool threads
+        [Parameter()]
+        [int] $MaxThreads,
 
         # Number of iteration to run the test
         [Parameter()]
@@ -65,8 +78,6 @@ function Test-DotnetLibrary {
     }
     $testhostDir = $testhostDir | Select-Object -First 1
 
-    $libraryDir = Join-Path $RuntimeSourcesRoot 'src/libraries' $Name 'tests' $TestProject
-
     if ($IsWindows) {
         $testhost = Join-Path $testhostDir "dotnet.exe"
     }
@@ -74,33 +85,100 @@ function Test-DotnetLibrary {
         $testhost = Join-Path $testhostDir "dotnet"
     }
 
-    $arguments = @(
-        'test',
-        '--no-build',
-        '--configuration', $LibrariesConfiguration
-    )
+    $projectPath = Join-Path $RuntimeSourcesRoot 'src/libraries' $Name 'tests' $TestProject
 
-    if ($Filter) {
-        $arguments += '--filter', $Filter
+    if ($Direct)
+    {
+        $projectName = Get-ChildItem -Path $projectPath -Filter '*.csproj' | Select-Object -First 1 -ExpandProperty BaseName
+
+        $program = $testhost
+
+        $artifactDir = Join-Path $RuntimeSourcesRoot 'artifacts/bin' $projectName $LibrariesConfiguration
+
+        if ($IsWindows)
+        {
+            $target = Get-ChildItem -Path $artifactDir -Filter "net$Framework-windows" | Select-Object -Last 1 -ExpandProperty BaseName
+        }
+        if ($IsLinux)
+        {
+            $target = Get-ChildItem -Path $artifactDir -Filter "net$Framework-linux" | Select-Object -Last 1 -ExpandProperty BaseName
+        }
+        if ($IsMacOs)
+        {
+            $target = Get-ChildItem -Path $artifactDir -Filter "net$Framework-osx" | Select-Object -Last 1 -ExpandProperty BaseName
+        }
+
+        if (!($target) -and ($IsLinux -or $IsMacOs))
+        {
+            $target = Get-ChildItem -Path $artifactDir -Filter "net$Framework-unix" | Select-Object -Last 1 -ExpandProperty BaseName
+        }
+
+        if (!($target))
+        {
+            Write-Error "Unable to find testhost for $Framework in $artifactDir"
+            return
+        }
+
+        $workDir = Join-Path $artifactDir $target
+
+        $arguments = @(
+            'exec',
+            '--runtimeconfig', "$ProjectName.runtimeconfig.json",
+            '--depsfile', "$ProjectName.deps.json",
+            'xunit.console.dll'
+            "$ProjectName.dll"
+            '-notrait', 'Category=Failing'
+        )
+
+        if ($Filter) {
+            $arguments += '-method', "*$Filter*"
+        }
+
+        if ($Outerloop) {
+            $arguments += '-trait', 'Category=OuterLoop'
+        }
+        else
+        {
+            $arguments += '-notrait', 'Category=OuterLoop'
+        }
+
+        if ($MaxThreads) {
+            $arguments += '-maxthreads', $MaxThreads
+        }
+    }
+    else
+    {
+        $program = 'dotnet'
+        $workDir = $projectPath
+
+        $arguments = @(
+            'test',
+            '--no-build',
+            '--configuration', $LibrariesConfiguration
+        )
+
+        if ($Filter) {
+            $arguments += '--filter', "$Filter"
+        }
+
+        if ($Outerloop) {
+            $arguments += "/p:OuterLoop=true"
+        }
     }
 
     if ($AdditionalArguments) {
         $arguments += $AdditionalArguments
     }
 
-    if ($Outerloop) {
-        $arguments += "/p:OuterLoop=true"
-    }
-
-    Write-Verbose "Working dir: $libraryDir"
-    Write-Verbose "Command: dotnet $arguments"
+    Write-Verbose "Working dir: $workDir"
+    Write-Verbose "Command: $program $arguments"
 
     for ($i = 0; $i -lt $IterationCount; $i++) {
         Write-Verbose "iteration $($i + 1)/$IterationCount"
 
         $process = Start-Process `
-            -FilePath 'dotnet' `
-            -WorkingDirectory $libraryDir `
+            -FilePath $program `
+            -WorkingDirectory $workDir `
             -ArgumentList $arguments `
             -NoNewWindow `
             -PassThru `
