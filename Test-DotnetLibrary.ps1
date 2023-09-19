@@ -27,7 +27,7 @@ function Test-DotnetLibrary {
 
         # Override for framework version
         [Parameter(ParameterSetName = "Direct")]
-        [ValidateSet('*', '6.0', '7.0', '8.0')]
+        [ValidateSet('*', '6.0', '7.0', '8.0', '9.0')]
         [string] $Framework = '*', # use latest by default
 
         # Filter for the tests, supports wildcards
