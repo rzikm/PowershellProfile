@@ -4,7 +4,7 @@ function Install-Dotnet {
         [string] $Version,
 
         [Parameter(ParameterSetName = "Channel")]
-        [ValidateSet("Current", "LTS", "7.0")]
+        [ValidateSet("Current", "LTS", "6.0", "7.0", "8.0")]
         [string] $Channel,
 
         [Parameter()]
@@ -42,6 +42,9 @@ function Install-Dotnet {
 
     if ($Version) {
         $parameters += "-Version", $Version
+    }
+    else if ($Channel) {
+        $parameters += "-Channel", $Channel
     }
 
     if ($InstallDir) {
