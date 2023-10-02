@@ -40,11 +40,13 @@ function Install-Dotnet {
         $parameters += "-Verbose"
     }
 
-    if ($Version) {
-        $parameters += "-Version", $Version
-    }
-    else if ($Channel) {
-        $parameters += "-Channel", $Channel
+    switch ($PSCmdlet.ParameterSetName) {
+        "Version" {
+            $parameters += "-Version", $Version
+        }
+        "Channel" {
+            $parameters += "-Channel", $Channel
+        }
     }
 
     if ($InstallDir) {
