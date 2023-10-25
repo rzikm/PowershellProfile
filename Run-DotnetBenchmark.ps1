@@ -12,6 +12,10 @@ function Run-DotnetBenchmark
         })]
         [string[]] $GitBranch,
 
+        [Parameter()]
+        [ValidateSet("6.0", "7.0", "8.0", "9.0")]
+        [string] $Framework = "9.0",
+
         # Filter on the benchmarks to run
         [Parameter()]
         [string] $BenchmarkFilter,
@@ -58,31 +62,34 @@ function Run-DotnetBenchmark
 
     if ($IsWindows)
     {
-        $testHostRoot = "$RuntimeSourcesRoot/artifacts/bin/testhost/net7.0-windows-Release-x64/shared/Microsoft.NETCore.App"
+        $testHostRoot = "$RuntimeSourcesRoot/artifacts/bin/testhost/net$Framework-windows-Release-x64/shared/Microsoft.NETCore.App"
     }
     if ($IsLinux)
     {
-        $testHostRoot = "$RuntimeSourcesRoot/artifacts/bin/testhost/net7.0-Linux-Release-x64/shared/Microsoft.NETCore.App"
+        $testHostRoot = "$RuntimeSourcesRoot/artifacts/bin/testhost/net$Framework-Linux-Release-x64/shared/Microsoft.NETCore.App"
     }
 
     $coreruns = @()
 
     foreach ($branch in $GitBranch)
     {
-        git -C $RuntimeSourcesRoot checkout $branch
-
-        # Rebuild changed projects
-        foreach ($proj in $ProjectsToRebuild)
+        if ($ProjectsToRebuild)
         {
-            dotnet build $RuntimeSourcesRoot/src/libraries/$proj/src/$proj.csproj --no-restore --configuration Release
-        }
+            git -C $RuntimeSourcesRoot checkout $branch
 
-        # save the testhost
-        if (Test-Path $testHostRoot/$branch)
-        {
-            Remove-Item -Recurse -Force $testHostRoot/$branch
+            # Rebuild changed projects
+            foreach ($proj in $ProjectsToRebuild)
+            {
+                dotnet build $RuntimeSourcesRoot/src/libraries/$proj/src/$proj.csproj --no-restore --configuration Release
+            }
+
+            # save the testhost
+            if (Test-Path $testHostRoot/$branch)
+            {
+                Remove-Item -Recurse -Force $testHostRoot/$branch
+            }
+            Copy-Item -Recurse "$testHostRoot/$Framework.0" $testHostRoot/$branch
         }
-        Copy-Item -Recurse $testHostRoot/7.0.0 $testHostRoot/$branch
 
         if ($IsWindows)
         {
@@ -95,11 +102,11 @@ function Run-DotnetBenchmark
     }
 
     # compose command line args
-    $benchmarkArgs = @("-f", "net7.0")
+    $benchmarkArgs = @("-f", "net8.0")
 
     if ($BenchmarkFilter)
     {
-        $benchmarkArgs += "--filter", "$BenchmarkFilter"
+        $benchmarkArgs += "--filter", "*$BenchmarkFilter*"
     }
 
     $benchmarkArgs += "--corerun"
