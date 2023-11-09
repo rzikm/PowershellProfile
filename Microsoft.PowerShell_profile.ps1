@@ -295,6 +295,7 @@ if (!($MyInvocation.ScriptName)) {
     . $PSScriptRoot/Test-DotnetLibrary.ps1
     . $PSScriptRoot/Install-Dotnet.ps1
     . $PSScriptRoot/Run-DotnetTesthost.ps1
+    . $PSScriptRoot/DotnetSuggestShim.ps1
 
     if ($IsWindows) {
         . $PSScriptRoot/Invoke-Perfview.ps1
