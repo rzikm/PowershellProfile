@@ -291,6 +291,7 @@ if (!($MyInvocation.ScriptName)) {
     . $PSScriptRoot/Run-DotnetBenchmark.ps1
     . $PSScriptRoot/DotnetDevUtils.ps1
     . $PSScriptRoot/Get-HelixPayload.ps1
+    . $PSScriptRoot/Invoke-HelixApi.ps1
     . $PSScriptRoot/Find-HelixWorkItem.ps1
     . $PSScriptRoot/Get-HelixJob.ps1
     . $PSScriptRoot/Get-HelixWorkItem.ps1

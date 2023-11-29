@@ -66,6 +66,7 @@ function Find-HelixWorkItem {
                 Job = $job.Name
                 Name = $workItem.Name
                 DefinitionName = $job.Definition.Name
+                Finished = $workItem.Finished
                 PhaseName = $job.Properties."System.PhaseName"
                 OperatingSystem = $job.Properties.operatingSystem
                 configuration = $job.Properties.configuration
