@@ -35,28 +35,12 @@ function Find-HelixWorkItem {
     if ($PullRequestId) {
         $params["PullRequestId"] = $PullRequestId
     }
+    if ($Configuration)
+    {
+        $params["Configuration"] = $Configuration
+    }
 
-    Get-HelixJob @params -Count 100 | Where-Object {
-        $res = $true
-
-        if ($QueueId) {
-            $res = $res -and $_.QueueId -like "*$QueueId*"
-        }
-        if ($PhaseName) {
-            $res = $res -and $_.Properties."System.PhaseName" -like "*$PhaseName*"
-        }
-        if ($DefinitionName) {
-            $res = $res -and $_.Definition.Name -like "*$DefinitionName*"
-        }
-        if ($OperatingSystem) {
-            $res = $res -and $_.Properties.operatingSystem -like "*$OperatingSystem*"
-        }
-        if ($Configuration) {
-            $res = $res -and $_.Properties.configuration -eq $Configuration
-        }
-
-        $res
-    } | ForEach-Object {
+    Get-HelixJob @params -QueueId $QueueId -OperatingSystem $OperatingSystem -PhaseName $PhaseName -DefinitionName $DefinitionName -Count 100 | ForEach-Object {
         $job = $_
 
         Get-HelixWorkItem -Job $job.Name -Name $Name | Get-HelixWorkItemDetail | ForEach-Object {
@@ -65,7 +49,7 @@ function Find-HelixWorkItem {
             [pscustomobject] @{
                 Job = $job.Name
                 Name = $workItem.Name
-                DefinitionName = $job.Definition.Name
+                DefinitionName = $job.Properties.DefinitionName
                 Finished = $workItem.Finished
                 PhaseName = $job.Properties."System.PhaseName"
                 OperatingSystem = $job.Properties.operatingSystem

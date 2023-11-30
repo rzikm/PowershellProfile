@@ -9,10 +9,23 @@ function Get-HelixJob {
         [string] $PullRequestId,
 
         [Parameter()]
-        [int] $Count = 20,
+        [string] $QueueId,
 
         [Parameter()]
-        [string] $PhaseName
+        [string] $OperatingSystem,
+
+        [Parameter()]
+        [string] $PhaseName,
+
+        [Parameter()]
+        [string] $DefinitionName,
+
+        [Parameter()]
+        [ValidateSet("Debug", "Release")]
+        [string] $Configuration,
+
+        [Parameter()]
+        [int] $Count = 20
     )
 
     $urlParameters = @{}
@@ -28,11 +41,24 @@ function Get-HelixJob {
     $urlParameters["count"] = $Count
 
     Invoke-HelixApi -Path "jobs" -UrlParameters $urlParameters | Where-Object {
+        $res = $true
+
+        if ($QueueId) {
+            $res = $res -and $_.QueueId -like "*$QueueId*"
+        }
         if ($PhaseName) {
-            $_.Properties."System.PhaseName" -like "*$PhaseName*"
+            $res = $res -and $_.Properties."System.PhaseName" -like "*$PhaseName*"
         }
-        else {
-            $true
+        if ($DefinitionName) {
+            $res = $res -and $_.Properties.DefinitionName -like "*$DefinitionName*"
         }
+        if ($OperatingSystem) {
+            $res = $res -and $_.Properties.operatingSystem -like "*$OperatingSystem*"
+        }
+        if ($Configuration) {
+            $res = $res -and $_.Properties.configuration -eq $Configuration
+        }
+
+        $res
     }
 }
