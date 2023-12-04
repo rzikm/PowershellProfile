@@ -66,7 +66,7 @@ function Run-DotnetBenchmark
     }
     if ($IsLinux)
     {
-        $testHostRoot = "$RuntimeSourcesRoot/artifacts/bin/testhost/net$Framework-Linux-Release-x64/shared/Microsoft.NETCore.App"
+        $testHostRoot = "$RuntimeSourcesRoot/artifacts/bin/testhost/net$Framework-linux-Release-x64/shared/Microsoft.NETCore.App"
     }
 
     $coreruns = @()
