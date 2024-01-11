@@ -24,6 +24,10 @@ function Find-HelixWorkItem {
         [string] $DefinitionName,
 
         [Parameter()]
+        [ValidateSet("Passed", "Failed")]
+        [string] $State,
+
+        [Parameter()]
         [ValidateSet("Debug", "Release")]
         [string] $Configuration
     )
@@ -35,8 +39,7 @@ function Find-HelixWorkItem {
     if ($PullRequestId) {
         $params["PullRequestId"] = $PullRequestId
     }
-    if ($Configuration)
-    {
+    if ($Configuration) {
         $params["Configuration"] = $Configuration
     }
 
@@ -46,15 +49,24 @@ function Find-HelixWorkItem {
         Get-HelixWorkItem -Job $job.Name -Name $Name | Get-HelixWorkItemDetail | ForEach-Object {
             $workItem = $_
 
-            [pscustomobject] @{
-                Job = $job.Name
-                Name = $workItem.Name
-                DefinitionName = $job.Properties.DefinitionName
-                Finished = $workItem.Finished
-                PhaseName = $job.Properties."System.PhaseName"
-                OperatingSystem = $job.Properties.operatingSystem
-                configuration = $job.Properties.configuration
-                ConsoleLogUri = $workItem.ConsoleOutputUri
+            $check = $true
+
+            if ($State) {
+                $check = $check -and ($workItem.State -like $State)
+            }
+
+            if ($check) {
+                [pscustomobject] @{
+                    Job             = $job.Name
+                    Name            = $workItem.Name
+                    DefinitionName  = $job.Properties.DefinitionName
+                    Finished        = $workItem.Finished
+                    PhaseName       = $job.Properties."System.PhaseName"
+                    OperatingSystem = $job.Properties.operatingSystem
+                    configuration   = $job.Properties.configuration
+                    ConsoleLogUri   = $workItem.ConsoleOutputUri
+                    State           = $workItem.State
+                }
             }
         }
     }
