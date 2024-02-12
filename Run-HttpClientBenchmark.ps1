@@ -81,10 +81,16 @@ function Run-HttpClientBenchmark {
         [switch] $CollectServerTraces,
 
         [Parameter()]
+        [String[]] $ExtraFiles,
+
+        [Parameter()]
         [string[]] $ClientExtraFiles,
 
         [Parameter()]
         [string[]] $ServerExtraFiles,
+
+        [Parameter()]
+        [Hashtable] $EnvVars,
 
         [Parameter()]
         [Hashtable] $ClientEnvVars,
@@ -192,8 +198,16 @@ function Run-HttpClientBenchmark {
         $arguments += @("--client.dotnetTrace", "true")
     }
 
+    foreach ($file in $ExtraFiles) {
+        $arguments += @("--client.options.outputFiles", $file)
+    }
+
     foreach ($file in $ClientExtraFiles) {
         $arguments += @("--client.options.outputFiles", $file)
+    }
+
+    foreach ($key in $EnvVars.Keys) {
+        $arguments += @("--client.environmentVariables", "$key=$($EnvVars[$key])")
     }
 
     foreach ($key in $ClientEnvVars.Keys) {
@@ -204,8 +218,16 @@ function Run-HttpClientBenchmark {
         $arguments += @("--server.dotnetTrace", "true")
     }
 
+    foreach ($file in $ExtraFiles) {
+        $arguments += @("--server.options.outputFiles", $file)
+    }
+
     foreach ($file in $ServerExtraFiles) {
         $arguments += @("--server.options.outputFiles", $file)
+    }
+
+    foreach ($key in $EnvVars.Keys) {
+        $arguments += @("--server.environmentVariables", "$key=$($EnvVars[$key])")
     }
 
     foreach ($key in $ServerEnvVars.Keys) {
