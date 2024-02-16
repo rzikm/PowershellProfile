@@ -1,13 +1,67 @@
-function Add-EnvironmentPath {
+function Set-EnvironmentVariable {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $Name,
+
+        [Parameter(Mandatory)]
+        [string] $Value,
+
+        # If set, the variable will be set machine-wide and persisted. Windows only.
+        [Parameter()]
+        [ValidateSet("Process", "User", "Machine")]
+        [string] $Scope = "Process"
+    )
+
+    [Environment]::SetEnvironmentVariable($Name, $Value, $Scope)
+}
+
+function Append-EnvironmentVariable {
     <#
 
 .SYNOPSIS
-Appends string to the PATH environment variable
+Appends string to the specified environment variable
 
 .DESCRIPTION
-Appends string to the PATH environment variable
+Appends string to the specified environment variable
 
 #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $Name,
+
+        [Parameter(Mandatory)]
+        [string] $Value,
+
+        [Parameter()]
+        [switch] $Prepend,
+
+        [Parameter()]
+        [ValidateSet("Process", "User", "Machine")]
+        [string] $Scope = "Process"
+    )
+
+    if ($IsLinux) {
+        $separator = ":"
+    }
+    if ($IsWindows) {
+        $separator = ";"
+    }
+
+    $newValue = [Environment]::GetEnvironmentVariable($Name, $Scope)
+
+    if ($Prepend) {
+        $newValue = "$Value$separator$newValue"
+    }
+    else {
+        $newValue += "$separator$Value"
+    }
+
+    Set-EnvironmentVariable -Name $Name -Value $newValue -Scope $Scope
+}
+
+function Add-EnvironmentPath {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
@@ -24,18 +78,37 @@ Appends string to the PATH environment variable
 
     $Path = Resolve-Path $Path
 
-    if ($IsLinux) {
-        $separator = ":"
-    }
-    if ($IsWindows) {
-        $separator = ";"
-    }
+    Append-EnvironmentVariable -Name "PATH" -Value $Path -Prepend:$Prepend
+}
 
-    if ($Prepend) {
-        $Env:PATH = "$Path$separator${Env:Path}"
-    }
-    else {
-        $Env:PATH += "$separator$Path"
+if ($IsLinux) {
+    function Add-LdLibraryPath {
+        <#
+
+    .SYNOPSIS
+    Appends string to the PATH environment variable
+
+    .DESCRIPTION
+    Appends string to the PATH environment variable
+
+    #>
+        [CmdletBinding()]
+        param(
+            [Parameter(Mandatory)]
+            [string] $Path,
+
+            [Parameter()]
+            [switch] $Prepend
+        )
+
+        if (!(Test-Path $Path)) {
+            # path does not exist
+            return;
+        }
+
+        $Path = Resolve-Path $Path
+
+        Append-EnvironmentVariable "LD_LIBRARY_PATH" -Value $Path -Prepend:$Prepend
     }
 }
 
