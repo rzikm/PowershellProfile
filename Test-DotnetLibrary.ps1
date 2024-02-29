@@ -87,34 +87,28 @@ function Test-DotnetLibrary {
 
     $projectPath = Join-Path $RuntimeSourcesRoot 'src/libraries' $Name 'tests' $TestProject
 
-    if ($Direct)
-    {
+    if ($Direct) {
         $projectName = Get-ChildItem -Path $projectPath -Filter '*.csproj' | Select-Object -First 1 -ExpandProperty BaseName
 
         $program = $testhost
 
         $artifactDir = Join-Path $RuntimeSourcesRoot 'artifacts/bin' $projectName $LibrariesConfiguration
 
-        if ($IsWindows)
-        {
+        if ($IsWindows) {
             $target = Get-ChildItem -Path $artifactDir -Filter "net$Framework-windows" | Select-Object -Last 1 -ExpandProperty BaseName
         }
-        if ($IsLinux)
-        {
+        if ($IsLinux) {
             $target = Get-ChildItem -Path $artifactDir -Filter "net$Framework-linux" | Select-Object -Last 1 -ExpandProperty BaseName
         }
-        if ($IsMacOs)
-        {
+        if ($IsMacOs) {
             $target = Get-ChildItem -Path $artifactDir -Filter "net$Framework-osx" | Select-Object -Last 1 -ExpandProperty BaseName
         }
 
-        if (!($target) -and ($IsLinux -or $IsMacOs))
-        {
+        if (!($target) -and ($IsLinux -or $IsMacOs)) {
             $target = Get-ChildItem -Path $artifactDir -Filter "net$Framework-unix" | Select-Object -Last 1 -ExpandProperty BaseName
         }
 
-        if (!($target))
-        {
+        if (!($target)) {
             Write-Error "Unable to find testhost for $Framework in $artifactDir"
             return
         }
@@ -137,17 +131,19 @@ function Test-DotnetLibrary {
         if ($Outerloop) {
             $arguments += '-trait', 'Category=OuterLoop'
         }
-        else
-        {
+        else {
             $arguments += '-notrait', 'Category=OuterLoop'
+        }
+
+        if ($BreakOnTestFailure) {
+            $arguments += '-stoponfail'
         }
 
         if ($MaxThreads) {
             $arguments += '-maxthreads', $MaxThreads
         }
     }
-    else
-    {
+    else {
         $program = 'dotnet'
         $workDir = $projectPath
 
