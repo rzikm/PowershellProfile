@@ -50,6 +50,7 @@ function Build-DotnetRuntime {
             "publish", # [only runs on demand]", #" Generate asset manifests and prepare to publish to BAR.
             "RegenerateDownloadTable" # [only runs on demand]", #" Regenerates the nightly build download table
         )]
+        [Alias('s')]
         [string[]] $Subset = @("Clr", "Libs", "Libs.Tests"),
 
         # Performs clean build
@@ -61,6 +62,9 @@ function Build-DotnetRuntime {
         [ValidateSet("Debug", "Checked", "Release")]
         [Alias("rc")]
         [string] $RuntimeConfiguration = "Release",
+
+        [Parameter()]
+        [switch] $SanitizeAddresses,
 
         # Build configuration to use for libraries
         [Parameter()]
@@ -93,6 +97,10 @@ function Build-DotnetRuntime {
         '-rc', $RuntimeConfiguration,
         '-lc', $LibrariesConfiguration
     )
+
+    if ($SanitizeAddresses) {
+        $params += @("-fsanitize", "address")
+    }
 
     if ($NoPgoOptimize) {
         $params += @('/p:NoPgoOptimize=true')
