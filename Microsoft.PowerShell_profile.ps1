@@ -336,11 +336,6 @@ if (!($MyInvocation.ScriptName)) {
             function emt { emacsclient -t $args -a vim }
             function magit { emacsclient -c -t -e "(progn (magit-status) (delete-other-windows))" }
         }
-
-        if ((uname -r) -match 'WSL') {
-            # Setup X server display
-            $ENV:DISPLAY = (ip route list default | awk '{print $3}') + ":0"
-        }
     }
 
     if ($IsWindows) {
