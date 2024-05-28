@@ -34,8 +34,8 @@ function Debug-HelixPayload {
             lldb --core $coreFile $exePath -o "setclrpath $hostPath" -o "setsymbolserver -directory $hostPath"
         }
         'windbg' {
-            Write-Verbose "`"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\windbg.exe`" -i $exePath -c `"!setclrpath $hostPath; !setsymbolserver -directory $hostPath`" -z $coreFile"
-            &"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\windbg.exe" -i $exePath -c "!setclrpath $hostPath; !setsymbolserver -directory $hostPath" -z $coreFile
+            Write-Verbose "`windbgx`" -i $exePath -c `"!setclrpath $hostPath; !setsymbolserver -directory $hostPath`" -z $coreFile"
+            &"windbgx" -i $exePath -c "!setclrpath $hostPath; !setsymbolserver -directory $hostPath" -z $coreFile
         }
     }
 }
