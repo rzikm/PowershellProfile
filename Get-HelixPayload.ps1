@@ -1,5 +1,5 @@
 function Get-HelixPayload {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = "ConsoleUri")]
     [Alias('ghp')]
     param(
         # Helix job id
@@ -20,7 +20,11 @@ function Get-HelixPayload {
 
         # Whether to download DAC binaries
         [Parameter()]
-        [switch] $DownloadDacBinaries
+        [switch] $DownloadDacBinaries,
+
+        # Don't unzip the downloaded archives
+        [Parameter()]
+        [switch] $NoUnzip
     )
 
     if ($PSCmdlet.ParameterSetName -eq "ConsoleUri") {
@@ -38,12 +42,13 @@ function Get-HelixPayload {
     runfo get-helix-payload -j $Job -w $WorkItem -o $OutDir
 
     # extract all zips files
-    $zips = Get-ChildItem -Recurse -LiteralPath $OutDir -Filter *.zip
-    $zips | Expand-Archive -DestinationPath $OutDir
-    Remove-Item $zips
+    if (!$NoUnzip) {
+        $zips = Get-ChildItem -Recurse -LiteralPath $OutDir -Filter *.zip
+        $zips | Expand-Archive -DestinationPath $OutDir
+        Remove-Item $zips
+    }
 
-    if ($DownloadDacBinaries)
-    {
+    if ($DownloadDacBinaries) {
         $buildid = Select-String -Path "$OutDir/scripts/*/execute.sh" "buildid (\d+)" | Select-Object -First 1 | Foreach-Object { $_.Matches.Groups[1].Value }
         Invoke-WebRequest "https://dev.azure.com/dnceng-public/public/_apis/build/builds/$buildid/artifacts?artifactName=CoreCLRCrossDacArtifacts&api-version=6.0&%24format=zip" -OutFile "$OutDir/CoreClrCrossDacArtifacts.zip"
         Expand-Archive "$OutDir/CoreClrCrossDacArtifacts.zip" -DestinationPath "$OutDir"
