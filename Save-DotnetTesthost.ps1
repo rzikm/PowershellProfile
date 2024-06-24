@@ -5,8 +5,8 @@ function Save-DotnetTesthost {
         [string] $Name,
 
         [Parameter()]
-        [ValidateSet('net8.0', 'net9.0')]
-        [string] $Framework = 'net9.0',
+        [ValidateSet('8.0', '9.0')]
+        [string] $Framework = '9.0',
 
         # Path to the dotnet/runtime repo
         [Parameter()]
@@ -23,6 +23,7 @@ function Save-DotnetTesthost {
     }
 
     $dir = Join-Path $RuntimeSourcesRoot "artifacts\bin\testhost\net$Framework-$OS-Release-x64\shared\Microsoft.NETCore.App"
+
 
     $src = Join-Path $dir "$Framework.0"
     $dst = Join-Path $dir $Name
