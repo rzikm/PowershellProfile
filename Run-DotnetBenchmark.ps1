@@ -1,16 +1,27 @@
-function Run-DotnetBenchmark
-{
+function Run-DotnetBenchmark {
     [CmdletBinding()]
     param(
-        # Git branches of the repository which should participate in the benchmark, defaults to current branch
-        [Parameter()]
+        [Parameter(Mandatory)]
         [ArgumentCompleter({
-            param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-            $root = $fakeBoundParameters.RuntimeSourcesRoot ?? $global:RuntimeSourcesRoot
-            git -C $root for-each-ref --format='%(refname:short)' refs/heads/ |
-                Where-Object { $_ -like "$wordToComplete*" }
-        })]
-        [string[]] $GitBranch,
+                param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+                $root = $fakeBoundParameters.RuntimeSourcesRoot ?? $global:RuntimeSourcesRoot
+                $framework = $fakeBoundParameters.Framework ?? "9.0"
+
+                if ($IsWindows) {
+                    $OS = "windows"
+                }
+                elseif ($IsLinux) {
+                    $OS = "linux"
+                }
+                elseif ($IsOSX) {
+                    $OS = "osx"
+                }
+
+                $dir = Join-Path $RuntimeSourcesRoot "artifacts\bin\testhost\net$Framework-$OS-Release-x64\shared\Microsoft.NETCore.App"
+
+                Get-ChildItem -Path $dir -Directory | ForEach-Object { $_.Name }
+            })]
+        [string[]] $CoreRuns,
 
         [Parameter()]
         [ValidateSet("6.0", "7.0", "8.0", "9.0")]
@@ -24,19 +35,6 @@ function Run-DotnetBenchmark
         [Parameter()]
         [string] $ArtifactsPath,
 
-        # If true, runtime is rebuilt (with -s Libs+Libs.Test -c Release)
-        [Parameter()]
-        [switch] $BuildRuntime,
-
-        # Projects to explicitly rebuild after switching branches, can speedup when comparing two branches
-        [Parameter()]
-        [ArgumentCompleter({
-            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-            $root = $fakeBoundParameters.RuntimeSourcesRoot ?? $global:RuntimeSourcesRoot
-            Get-ChildItem $root/src/libraries -Filter "$wordToComplete*" | ForEach-Object Name
-        })]
-        [string[]] $ProjectsToRebuild,
-
         # Path to the dotnet/runtime repo
         [Parameter()]
         [string] $RuntimeSourcesRoot = $global:RuntimeSourcesRoot,
@@ -49,68 +47,34 @@ function Run-DotnetBenchmark
     # Stop on errors
     $ErrorActionPreference = "Stop"
 
-    if ($BuildRuntime)
-    {
-        Build-DotnetRuntime -Subset Libs, Libs.Tests -LibrariesConfiguration Release -RuntimeSourcesRoot $RuntimeSourcesRoot -RuntimeConfiguration Release
+    if ($IsWindows) {
+        $OS = "windows"
+    }
+    elseif ($IsLinux) {
+        $OS = "linux"
+    }
+    elseif ($IsOSX) {
+        $OS = "osx"
     }
 
-    if (!$GitBranch)
-    {
-        # Get current branch name
-        $GitBranch = git -C $RuntimeSourcesRoot rev-parse --abbrev-ref HEAD
-    }
+    $dir = Join-Path $RuntimeSourcesRoot "artifacts\bin\testhost\net$Framework-$OS-Release-x64\shared\Microsoft.NETCore.App"
 
-    if ($IsWindows)
-    {
-        $testHostRoot = "$RuntimeSourcesRoot/artifacts/bin/testhost/net$Framework-windows-Release-x64/shared/Microsoft.NETCore.App"
-    }
-    if ($IsLinux)
-    {
-        $testHostRoot = "$RuntimeSourcesRoot/artifacts/bin/testhost/net$Framework-linux-Release-x64/shared/Microsoft.NETCore.App"
-    }
-
-    $coreruns = @()
-
-    foreach ($branch in $GitBranch)
-    {
-        if ($ProjectsToRebuild)
-        {
-            git -C $RuntimeSourcesRoot checkout $branch
-
-            # Rebuild changed projects
-            foreach ($proj in $ProjectsToRebuild)
-            {
-                dotnet build $RuntimeSourcesRoot/src/libraries/$proj/src/$proj.csproj --no-restore --configuration Release
-            }
-
-            # save the testhost
-            if (Test-Path $testHostRoot/$branch)
-            {
-                Remove-Item -Recurse -Force $testHostRoot/$branch
-            }
-            Copy-Item -Recurse "$testHostRoot/$Framework.0" $testHostRoot/$branch
-        }
-
-        if ($IsWindows)
-        {
-            $coreruns += "$testHostRoot/$branch/corerun.exe"
-        }
-        else
-        {
-            $coreruns += "$testHostRoot/$branch/corerun"
-        }
-    }
-
-    # compose command line args
-    $benchmarkArgs = @("-f", "net8.0")
-
-    if ($BenchmarkFilter)
-    {
+    if ($BenchmarkFilter) {
         $benchmarkArgs += "--filter", "*$BenchmarkFilter*"
     }
 
-    $benchmarkArgs += "--corerun"
-    $benchmarkArgs += $coreruns
+    foreach ($name in $CoreRuns) {
+        if ($IsWindows) {
+            $corerun = Get-Item (Join-Path $dir $name "corerun.exe")
+        }
+        else {
+            $corerun = Get-Item (Join-Path $dir $name "corerun")
+        }
 
-    python3 $PerformanceSourcesRoot/scripts/benchmarks_ci.py @benchmarkArgs
+        $benchmarkArgs += "--corerun", $corerun.FullName
+    }
+
+    $projectPath = Join-Path $PerformanceSourcesRoot "src/benchmarks/micro/MicroBenchmarks.csproj"
+
+    dotnet run -c Release --project $projectPath --framework "net$Framework" -- $benchmarkArgs
 }

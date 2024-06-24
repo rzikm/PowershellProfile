@@ -370,6 +370,7 @@ if (!($MyInvocation.ScriptName)) {
     . $PSScriptRoot/Run-DotnetTesthost.ps1
     . $PSScriptRoot/DotnetSuggestShim.ps1
     . $PSScriptRoot/Run-HttpClientBenchmark.ps1
+    . $PSScriptRoot/Save-DotnetTesthost.ps1
     . $PSScriptRoot/Trace-QuicWpr.ps1
     . $PSScriptRoot/Start-WpaForQuic.ps1
 
