@@ -78,7 +78,13 @@ function Run-HttpClientBenchmark {
         [switch] $CollectClientTraces,
 
         [Parameter()]
+        [string] $ClientTraceProviders,
+
+        [Parameter()]
         [switch] $CollectServerTraces,
+
+        [Parameter()]
+        [string] $ServerTraceProviders,
 
         [Parameter()]
         [String[]] $ExtraFiles,
@@ -198,6 +204,10 @@ function Run-HttpClientBenchmark {
         $arguments += @("--client.dotnetTrace", "true")
     }
 
+    if ($ClientTraceProviders) {
+        $arguments += @("--client.dotnetTraceProviders", $ClientTraceProviders)
+    }
+
     foreach ($file in $ExtraFiles) {
         $arguments += @("--client.options.outputFiles", $file)
     }
@@ -216,6 +226,10 @@ function Run-HttpClientBenchmark {
 
     if ($CollectServerTraces) {
         $arguments += @("--server.dotnetTrace", "true")
+    }
+
+    if ($ServerTraceProviders) {
+        $arguments += @("--server.dotnetTraceProviders", $ServerTraceProviders)
     }
 
     foreach ($file in $ExtraFiles) {
