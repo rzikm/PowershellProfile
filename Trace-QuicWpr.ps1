@@ -19,15 +19,24 @@ function Trace-QuicWpr {
             'Full.Verbose' # Collects all MsQuic events, [TAEF](https://docs.microsoft.com/en-us/windows-hardware/drivers/taef/) events and several networking components' events. This is the **most verbose** possible, and should only be used for the most minimal scenarios.
         )]
         [Alias('Profile')]
-        [string] $ProfileName
+        [string] $ProfileName,
+
+        [Parameter()]
+        [ScriptBlock] $ScriptBlock
     )
+
+    if ($ScriptBlock -eq $null) {
+        $ScriptBlock = {
+            Write-Host "Press enter to stop trace collection..."
+            Read-Host
+        }
+    }
 
     $wprpPath = Join-Path $global:MsQuicRoot "src/manifest/MsQuic.wprp"
 
     sudo.exe wpr.exe -start "$wprpPath!$ProfileName" -filemode
 
-    Write-Host "Recording started. Press any key to stop recording."
-    Read-Host
+    & $ScriptBlock
 
     sudo.exe wpr.exe -stop $FilePath
 }
