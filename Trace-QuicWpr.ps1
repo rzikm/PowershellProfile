@@ -2,7 +2,7 @@ function Trace-QuicWpr {
     [CmdLetBinding()]
     param (
         [Parameter()]
-        [string] $FilePath,
+        [string] $FilePath = "msquic.etl",
 
         [Parameter()]
         [ValidateSet(
@@ -25,7 +25,7 @@ function Trace-QuicWpr {
         [ScriptBlock] $ScriptBlock
     )
 
-    if ($ScriptBlock -eq $null) {
+    if (!$ScriptBlock) {
         $ScriptBlock = {
             Write-Host "Press enter to stop trace collection..."
             Read-Host

@@ -8,14 +8,14 @@ function Trace-Schannel {
         [ScriptBlock] $ScriptBlock
     )
 
-    if ($ScriptBlock -eq $null) {
+    if (!$ScriptBlock) {
         $ScriptBlock = {
             Write-Host "Press enter to stop trace collection..."
             Read-Host
         }
     }
 
-    if ($DirPath -eq $null) {
+    if (!$DirPath) {
         $DirPath = $pwd
     }
 
