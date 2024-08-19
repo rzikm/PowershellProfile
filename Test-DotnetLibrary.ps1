@@ -169,6 +169,10 @@ function Test-DotnetLibrary {
     Write-Verbose "Working dir: $workDir"
     Write-Verbose "Command: $program $arguments"
 
+    $environment = @{
+        XUNIT_HIDE_PASSING_OUTPUT_DIAGNOSTICS = "1"
+    }
+
     for ($i = 0; $i -lt $IterationCount; $i++) {
         Write-Verbose "iteration $($i + 1)/$IterationCount"
 
@@ -177,6 +181,7 @@ function Test-DotnetLibrary {
             -WorkingDirectory $workDir `
             -ArgumentList $arguments `
             -NoNewWindow `
+            -Environment $environment `
             -PassThru `
 
         # wait for the process to finish
