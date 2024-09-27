@@ -10,15 +10,16 @@ function Install-Dotnet {
         [Parameter()]
         [string] $InstallDir,
 
+        [Parameter(ParameterSetName = "Channel")]
+        [ValidateSet("daily", "signed", "validated", "preview", "GA")]
+        [string] $Quality,
+
         [Parameter()]
         [switch] $DryRun
     )
 
-    $installScript = New-TemporaryFile
-    if ($IsWindows) {
-        $installScript = Rename-Item -Path $installScript -NewName ($installScript.BaseName + ".ps1") -PassThru
-    }
-    else {
+    if (!$IsWindows) {
+        $installScript = New-TemporaryFile
         $installScript = Rename-Item -Path $installScript -NewName ($installScript.BaseName + ".sh") -PassThru
     }
 
@@ -26,43 +27,51 @@ function Install-Dotnet {
     $dotnetInstallScriptVersion = "v1"
 
     if ($IsWindows) {
-        $uri = "https://dotnet.microsoft.com/download/dotnet/scripts/$dotnetInstallScriptVersion/dotnet-install.ps1"
+        # $uri = "https://dotnet.microsoft.com/download/dotnet/scripts/$dotnetInstallScriptVersion/dotnet-install.ps1"
+        # $script = [scriptblock]::Create((Invoke-WebRequest $uri))
     }
     else {
+        $installScript = New-TemporaryFile
         $uri = "https://dotnet.microsoft.com/download/dotnet/scripts/$dotnetInstallScriptVersion/dotnet-install.sh"
+        Invoke-WebRequest $uri -OutFile $installScript
     }
 
-    Invoke-WebRequest $uri -OutFile $installScript
-
-    $parameters = @()
+    $parameters = @{}
 
     if ($PSBoundParameters['Verbose']) {
-        $parameters += "-Verbose"
+        $parameters.Verbose = $true
     }
 
     switch ($PSCmdlet.ParameterSetName) {
         "Version" {
-            $parameters += "-Version", $Version
+            $parameters.Version = $Version
         }
         "Channel" {
-            $parameters += "-Channel", $Channel
+            $parameters.Channel = $Channel
         }
     }
 
     if ($InstallDir) {
-        $parameters += "-InstallDir", $InstallDir
+        $parameters.InstallDir = $InstallDir
+    }
+
+    if ($Quality) {
+        $parameters.Quality = $Quality
     }
 
     if ($DryRun) {
-        $parameters += "-DryRun"
+        $parameters.DryRun = $true
     }
 
     if ($IsWindows) {
-        pwsh $installScript @parameters
+        & $Script @parameters
     }
     else {
-        bash $installScript @parameters
+        $scriptParams = @()
+        foreach ($key in $parameters.Keys) {
+            $scriptParams += "-$key", $parameters[$key]
+        }
+        bash $installScript @scriptParams
+        Remove-Item $installScript
     }
-
-    Remove-Item $installScript
 }
