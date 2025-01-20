@@ -27,7 +27,7 @@ function Test-DotnetLibrary {
 
         # Override for framework version
         [Parameter(ParameterSetName = "Direct")]
-        [ValidateSet('*', '6.0', '7.0', '8.0', '9.0')]
+        [ValidateSet('*', '8.0', '9.0', '10.0')]
         [string] $Framework = '*', # use the only one by default
 
         # Filter for the tests, supports wildcards
@@ -169,7 +169,7 @@ function Test-DotnetLibrary {
     Write-Verbose "Working dir: $workDir"
     Write-Verbose "Command: $program $arguments"
 
-    $environment = @{
+    $env = @{
         XUNIT_HIDE_PASSING_OUTPUT_DIAGNOSTICS = "1"
     }
 
@@ -181,7 +181,7 @@ function Test-DotnetLibrary {
             -WorkingDirectory $workDir `
             -ArgumentList $arguments `
             -NoNewWindow `
-            -Environment $environment `
+            -Environment $env `
             -PassThru `
 
         # wait for the process to finish

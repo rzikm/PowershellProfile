@@ -24,8 +24,8 @@ function Run-DotnetBenchmark {
         [string[]] $CoreRuns,
 
         [Parameter()]
-        [ValidateSet("6.0", "7.0", "8.0", "9.0")]
-        [string] $Framework = "9.0",
+        [ValidateSet("8.0", "9.0", "10.0")]
+        [string] $Framework = "10.0",
 
         # Filter on the benchmarks to run
         [Parameter()]

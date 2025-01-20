@@ -5,8 +5,8 @@ function Save-DotnetTesthost {
         [string] $Name,
 
         [Parameter()]
-        [ValidateSet('8.0', '9.0')]
-        [string] $Framework = '9.0',
+        [ValidateSet('8.0', '9.0', '10.0')]
+        [string] $Framework = '10.0',
 
         # Path to the dotnet/runtime repo
         [Parameter()]

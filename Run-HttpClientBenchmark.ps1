@@ -3,8 +3,8 @@ function Run-HttpClientBenchmark {
     param(
         # Target framework to use
         [Parameter()]
-        [ValidateSet('net8.0', 'net9.0')]
-        [string] $Framework = 'net9.0',
+        [ValidateSet('net8.0', 'net9.0', 'net10.0')]
+        [string] $Framework = 'net10.0',
 
         # Profile to use
         [Parameter(Mandatory)]
