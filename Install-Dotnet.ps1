@@ -27,8 +27,8 @@ function Install-Dotnet {
     $dotnetInstallScriptVersion = "v1"
 
     if ($IsWindows) {
-        # $uri = "https://dotnet.microsoft.com/download/dotnet/scripts/$dotnetInstallScriptVersion/dotnet-install.ps1"
-        # $script = [scriptblock]::Create((Invoke-WebRequest $uri))
+        $uri = "https://dotnet.microsoft.com/download/dotnet/scripts/$dotnetInstallScriptVersion/dotnet-install.ps1"
+        $script = [scriptblock]::Create((Invoke-WebRequest $uri))
     }
     else {
         $installScript = New-TemporaryFile
