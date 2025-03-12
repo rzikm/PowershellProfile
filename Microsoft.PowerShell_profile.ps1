@@ -336,6 +336,11 @@ if (!($MyInvocation.ScriptName)) {
             function emt { emacsclient -t $args -a vim }
             function magit { emacsclient -c -t -e "(progn (magit-status) (delete-other-windows))" }
         }
+
+        function Set-CorePattern {
+            param([string] $Pattern = "core.%e.%p")
+            sudo bash -c "echo $Pattern > /proc/sys/kernel/core_pattern"
+        }
     }
 
     if ($IsWindows) {
@@ -371,6 +376,7 @@ if (!($MyInvocation.ScriptName)) {
     . $PSScriptRoot/DotnetSuggestShim.ps1
     . $PSScriptRoot/Run-HttpClientBenchmark.ps1
     . $PSScriptRoot/Save-DotnetTesthost.ps1
+    . $PSScriptRoot/Enable-DotnetDump.ps1
 
     if ($IsWindows) {
         . $PSScriptRoot/Trace-QuicWpr.ps1

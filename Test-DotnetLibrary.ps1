@@ -119,7 +119,7 @@ function Test-DotnetLibrary {
             'exec',
             '--runtimeconfig', "$ProjectName.runtimeconfig.json",
             '--depsfile', "$ProjectName.deps.json",
-            'xunit.console.dll'
+            '/home/rzikm/.nuget/packages/microsoft.dotnet.xunitconsolerunner/2.9.2-beta.25058.4/build/../tools/net/xunit.console.dll'
             "$ProjectName.dll"
             '-notrait', 'Category=Failing'
         )
