@@ -352,38 +352,16 @@ if (!($MyInvocation.ScriptName)) {
 
     oh-my-posh init pwsh --config $PSScriptRoot/theme.omp.json | Invoke-Expression
 
-    . $PSScriptRoot/Send-GradingEmails.ps1
-
     . $PSScriptRoot/PSReadLineConfig.ps1
 
-    # Helper cmdlets for work
-    . $PSScriptRoot/Trace-Dotnet.ps1
-    . $PSScriptRoot/Use-DotnetRoot.ps1
-    . $PSScriptRoot/Open-VSSolution.ps1
-    . $PSScriptRoot/Build-DotnetRuntime.ps1
-    . $PSScriptRoot/Run-DotnetBenchmark.ps1
-    . $PSScriptRoot/DotnetDevUtils.ps1
-    . $PSScriptRoot/Get-HelixPayload.ps1
-    . $PSScriptRoot/Invoke-HelixApi.ps1
-    . $PSScriptRoot/Find-HelixWorkItem.ps1
-    . $PSScriptRoot/Get-HelixJob.ps1
-    . $PSScriptRoot/Get-HelixWorkItem.ps1
-    . $PSScriptRoot/Get-HelixWorkItemDetail.ps1
-    . $PSScriptRoot/Debug-HelixPayload.ps1
-    . $PSScriptRoot/Test-DotnetLibrary.ps1
-    . $PSScriptRoot/Install-Dotnet.ps1
-    . $PSScriptRoot/Run-DotnetTesthost.ps1
-    . $PSScriptRoot/DotnetSuggestShim.ps1
-    . $PSScriptRoot/Run-HttpClientBenchmark.ps1
-    . $PSScriptRoot/Save-DotnetTesthost.ps1
-    . $PSScriptRoot/Enable-DotnetDump.ps1
+    foreach ($file in (Get-ChildItem $PSScriptRoot/Common/*.ps1)) {
+        . $file.FullName
+    }
 
     if ($IsWindows) {
-        . $PSScriptRoot/Trace-QuicWpr.ps1
-        . $PSScriptRoot/Trace-Schannel.ps1
-        . $PSScriptRoot/Start-WpaForQuic.ps1
-        . $PSScriptRoot/Invoke-Perfview.ps1
-        . $PSScriptRoot/Update-SessionEnvironment.ps1
+        foreach ($file in (Get-ChildItem $PSScriptRoot/Windows/*.ps1)) {
+            . $file.FullName
+        }
     }
 
     Import-Module posh-git
