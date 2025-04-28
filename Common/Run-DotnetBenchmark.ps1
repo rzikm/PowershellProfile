@@ -5,7 +5,7 @@ function Run-DotnetBenchmark {
         [ArgumentCompleter({
                 param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
                 $root = $fakeBoundParameters.RuntimeSourcesRoot ?? $global:RuntimeSourcesRoot
-                $framework = $fakeBoundParameters.Framework ?? "9.0"
+                $framework = $fakeBoundParameters.Framework ?? $global:RuntimeLatestFramework
 
                 if ($IsWindows) {
                     $OS = "windows"
@@ -25,7 +25,7 @@ function Run-DotnetBenchmark {
 
         [Parameter()]
         [ValidateSet("8.0", "9.0", "10.0")]
-        [string] $Framework = "10.0",
+        [string] $Framework = $global:RuntimeLatestFramework,
 
         # Filter on the benchmarks to run
         [Parameter()]

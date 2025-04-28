@@ -1,3 +1,5 @@
+$global:RuntimeLatestFramework = "10.0"
+
 function DecodeTaskStateFlags([int]$Flags) {
     # values taken from https://source.dot.net/#System.Private.CoreLib/Task.cs,142
 
