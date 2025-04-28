@@ -28,7 +28,7 @@ function Test-DotnetLibrary {
         # Override for framework version
         [Parameter(ParameterSetName = "Direct")]
         [ValidateSet('*', '8.0', '9.0', '10.0')]
-        [string] $Framework = '*', # use the only one by default
+        [string] $Framework = $global:RuntimeLatestFramework,
 
         # Filter for the tests, supports wildcards
         [Parameter()]
@@ -115,11 +115,14 @@ function Test-DotnetLibrary {
 
         $workDir = Join-Path $artifactDir $target
 
+        $NugetPackageRoot = Join-Path $HOME "/.nuget/packages"
+        $xunitConsoleRunner = Get-ChildItem -Recurse "$NugetPackageRoot/**/xunit.console.dll" | Select-Object -First 1
+
         $arguments = @(
             'exec',
             '--runtimeconfig', "$ProjectName.runtimeconfig.json",
             '--depsfile', "$ProjectName.deps.json",
-            '/home/rzikm/.nuget/packages/microsoft.dotnet.xunitconsolerunner/2.9.2-beta.25058.4/build/../tools/net/xunit.console.dll'
+            $xunitConsoleRunner.FullName
             "$ProjectName.dll"
             '-notrait', 'Category=Failing'
         )
