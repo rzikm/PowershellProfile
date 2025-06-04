@@ -116,7 +116,7 @@ function Test-DotnetLibrary {
         $workDir = Join-Path $artifactDir $target
 
         $NugetPackageRoot = Join-Path $HOME "/.nuget/packages"
-        $xunitConsoleRunner = Get-ChildItem -Recurse "$NugetPackageRoot/**/xunit.console.dll" | Select-Object -First 1
+        $xunitConsoleRunner = Get-ChildItem -Recurse "$NugetPackageRoot/xunit.runner.console/**/xunit.console.dll" | Select-Object -First 1
 
         $arguments = @(
             'exec',
