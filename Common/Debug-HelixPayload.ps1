@@ -35,7 +35,7 @@ function Debug-HelixPayload {
         }
         'windbg' {
             Write-Verbose "`windbgx`" -i $exePath -c `"!setclrpath $hostPath; !setsymbolserver -directory $hostPath`" -z $coreFile"
-            &"windbgx" -i $exePath -c "!setclrpath $hostPath; !setsymbolserver -directory $hostPath" -z $coreFile
+            &"windbgx" -i $exePath -c ".load $HOME\.dotnet\sos\sos.dll; !setclrpath $hostPath; !setsymbolserver -directory $hostPath" -z $coreFile
         }
     }
 }
