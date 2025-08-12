@@ -74,6 +74,13 @@ function Run-DotnetBenchmark {
         $benchmarkArgs += "--corerun", $corerun.FullName
     }
 
+    if ($ArtifactsPath) {
+        if (-not (Test-Path $ArtifactsPath)) {
+            New-Item -ItemType Directory -Path $ArtifactsPath | Out-Null
+        }
+        $benchmarkArgs += "--artifacts", $ArtifactsPath
+    }
+
     $projectPath = Join-Path $PerformanceSourcesRoot "src/benchmarks/micro/MicroBenchmarks.csproj"
 
     dotnet run -c Release --project $projectPath --framework "net$Framework" -- $benchmarkArgs
