@@ -71,6 +71,18 @@ function Build-DotnetRuntime {
         [Alias('s')]
         [string[]] $Subset = @("Clr", "Libs", "Libs.Tests"),
 
+        # Operating system for which to build
+        [Parameter()]
+        [ValidateSet("windows", "linux", "osx", "android", "browser", "wasi")]
+        [Alias("os")]
+        [string] $OperatingSystem,
+
+        # Architecture for which to build
+        [Parameter()]
+        [ValidateSet("x64", "x86", "arm64", "arm")]
+        [Alias("arch")]
+        [string] $Architecture,
+
         # Performs clean build
         [Parameter()]
         [switch] $Clean,
@@ -115,6 +127,14 @@ function Build-DotnetRuntime {
         '-rc', $RuntimeConfiguration,
         '-lc', $LibrariesConfiguration
     )
+
+    if ($OperatingSystem) {
+        $params += @("-os", $OperatingSystem)
+    }
+
+    if ($Architecture) {
+        $params += @("-arch", $Architecture)
+    }
 
     if ($SanitizeAddresses) {
         $params += @("-fsanitize", "address")
