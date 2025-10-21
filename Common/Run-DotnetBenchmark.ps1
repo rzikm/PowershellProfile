@@ -31,6 +31,18 @@ function Run-DotnetBenchmark {
         [Parameter()]
         [string] $BenchmarkFilter,
 
+        # Minimum iteration count for each benchmark
+        [Parameter()]
+        [int] $MinIterationCount,
+
+        # Maximum iteration count for each benchmark
+        [Parameter()]
+        [int] $MaxIterationCount,
+
+        # Iteration time for each benchmark
+        [Parameter()]
+        [int] $IterationTimeMs,
+
         # Path where to store results
         [Parameter()]
         [string] $ArtifactsPath,
@@ -79,6 +91,18 @@ function Run-DotnetBenchmark {
             New-Item -ItemType Directory -Path $ArtifactsPath | Out-Null
         }
         $benchmarkArgs += "--artifacts", $ArtifactsPath
+    }
+
+    if ($MinIterationCount) {
+        $benchmarkArgs += "--minIterationCount=$MinIterationCount"
+    }
+
+    if ($MaxIterationCount) {
+        $benchmarkArgs += "--maxIterationCount=$MaxIterationCount"
+    }
+
+    if ($IterationTimeMs) {
+        $benchmarkArgs += "--iterationTime=$IterationTimeMs"
     }
 
     $projectPath = Join-Path $PerformanceSourcesRoot "src/benchmarks/micro/MicroBenchmarks.csproj"
