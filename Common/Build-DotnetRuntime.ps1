@@ -87,6 +87,10 @@ function Build-DotnetRuntime {
         [Parameter()]
         [switch] $Clean,
 
+        # Test Native AOT build
+        [Parameter()]
+        [switch] $TestNativeAot,
+
         # Build configuration to use for the runtime
         [Parameter()]
         [ValidateSet("Debug", "Checked", "Release")]
@@ -134,6 +138,10 @@ function Build-DotnetRuntime {
 
     if ($Architecture) {
         $params += @("-arch", $Architecture)
+    }
+
+    if ($TestNativeAot) {
+        $params += @('/p:TestNativeAot=true')
     }
 
     if ($SanitizeAddresses) {
