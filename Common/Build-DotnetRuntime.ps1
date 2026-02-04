@@ -85,34 +85,42 @@ function Build-DotnetRuntime {
 
         # Performs clean build
         [Parameter()]
+        [Alias("cl")]
         [switch] $Clean,
 
         # Test Native AOT build
         [Parameter()]
         [switch] $TestNativeAot,
 
+        # Overall configuration for the build
+        [Parameter()]
+        [ValidateSet("Debug", "Release")]
+        [Alias("c")]
+        [string] $Configuration,
+
         # Build configuration to use for the runtime
         [Parameter()]
         [ValidateSet("Debug", "Checked", "Release")]
         [Alias("rc")]
-        [string] $RuntimeConfiguration = "Release",
-
-        [Parameter()]
-        [switch] $SanitizeAddresses,
+        [string] $RuntimeConfiguration,
 
         # Build configuration to use for libraries
         [Parameter()]
         [ValidateSet("Debug", "Release")]
         [Alias("lc")]
-        [string] $LibrariesConfiguration = "Debug",
-
-        # Path to the sources root directory
-        [Parameter()]
-        [string] $RuntimeSourcesRoot = $global:RuntimeSourcesRoot,
+        [string] $LibrariesConfiguration,
 
         # Disable PGO optimization
         [Parameter()]
-        [switch] $NoPgoOptimize
+        [switch] $NoPgoOptimize,
+
+        # Enable address sanitizer for the native code
+        [Parameter()]
+        [switch] $SanitizeAddresses,
+
+        # Path to the sources root directory
+        [Parameter()]
+        [string] $RuntimeSourcesRoot = $global:RuntimeSourcesRoot
     )
 
     if ($Clean) {
@@ -127,10 +135,24 @@ function Build-DotnetRuntime {
     }
 
     $params = , '-s' + ($Subset -join '+')
-    $params += @(
-        '-rc', $RuntimeConfiguration,
-        '-lc', $LibrariesConfiguration
-    )
+
+    # calculate the defaults for build configuration:
+    if (!$Configuration -and !$RuntimeConfiguration -and !$LibrariesConfiguration) {
+        $RuntimeConfiguration = 'Release'
+        $LibrariesConfiguration = 'Debug'
+    }
+
+    if ($Configuration) {
+        $params += @('-c', $Configuration)
+    }
+
+    if ($LibrariesConfiguration) {
+        $params += @('-lc', $LibrariesConfiguration)
+    }
+
+    if ($RuntimeConfiguration) {
+        $params += @('-rc', $RuntimeConfiguration)
+    }
 
     if ($OperatingSystem) {
         $params += @("-os", $OperatingSystem)
