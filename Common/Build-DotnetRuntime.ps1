@@ -110,6 +110,10 @@ function Build-DotnetRuntime {
         [Alias("lc")]
         [string] $LibrariesConfiguration,
 
+        # Extra CMake args
+        [Parameter()]
+        [string[]] $CMakeArgs,
+
         # Disable PGO optimization
         [Parameter()]
         [switch] $NoPgoOptimize,
@@ -172,6 +176,10 @@ function Build-DotnetRuntime {
 
     if ($NoPgoOptimize) {
         $params += @('/p:NoPgoOptimize=true')
+    }
+
+    foreach ($arg in $CMakeArgs) {
+        $params += @('-cmakeargs', $arg)
     }
 
     Write-Host $buildCmd @params
