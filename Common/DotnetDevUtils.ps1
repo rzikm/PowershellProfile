@@ -1,4 +1,17 @@
-$global:RuntimeLatestFramework = "10.0"
+$global:RuntimeLatestFrameworkVersion = "11.0"
+$global:RuntimeLatestFramework = "net$global:RuntimeLatestFrameworkVersion"
+
+class RuntimeVersions : System.Management.Automation.IValidateSetValuesGenerator {
+    [string[]] GetValidValues() {
+        return [string[]] @("8.0", "9.0", "10.0", "11.0")
+    }
+}
+
+class RuntimeFrameworks : System.Management.Automation.IValidateSetValuesGenerator {
+    [string[]] GetValidValues() {
+        return [string[]] @("net8.0", "net9.0", "net10.0", "net11.0")
+    }
+}
 
 function DecodeTaskStateFlags([int]$Flags) {
     # values taken from https://source.dot.net/#System.Private.CoreLib/Task.cs,142
