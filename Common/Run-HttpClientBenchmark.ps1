@@ -44,9 +44,13 @@ function Run-HttpClientBenchmark {
         [Parameter()]
         [int] $ConcurrencyPerClient,
 
-        # Size of the server rsponse
+        # Size of the server response
         [Parameter()]
         [int] $ResponseSize,
+
+        [Parameter()]
+        [ValidateSet('none', 'connectionclose', 'expectcontinue')]
+        [string] $Headers,
 
         # Number of concurrent threads per HttpClient instance
         [Parameter()]
@@ -139,6 +143,10 @@ function Run-HttpClientBenchmark {
         '--client.framework', $Framework,
         '--server.framework', $Framework
     )
+
+    if ($Headers) {
+        $arguments += @("--variable", "requestHeaders=$Headers")
+    }
 
     if ($Iterations -gt 1) {
         $arguments += @("--variable", "iterations=$Iterations")
