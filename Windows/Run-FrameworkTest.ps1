@@ -29,16 +29,26 @@ function Run-FrameworkTest {
         [string] $Username = "User",
 
         # Password to the target VM
-        [string] $Password = "password"
+        [string] $Password = "password",
+
+        # list of assemblies to replace in the GAC on the target VM with the locally built binaries, expected to be built already (no VS assumed on the VM)
+        [string[]] $AssembliesToReplace = @("System.dll"),
+
+        # local path to the .NET Framework enlistment
+        [string] $NetFxPath = "C:\source\NetFx\Net481Rel1Last_C\src\",
+
+        # Path to where local .NET Framework enlistment creates build outputs
+        [string] $LocalNetFxArtifactsPath = "C:\binaries.amd64ret"
     )
-
-    $ErrorActionPreference = 'stop'
-
     # path to where NCLTools is located locally
     $nclToolsRoot = "C:\source\NCLTools\"
 
+    $ErrorActionPreference = 'stop'
+
     # credentials to the target VM
-    $psCred = New-Object System.Management.Automation.PSCredential -ArgumentList ($username, (ConvertTo-SecureString $password -AsPlainText -Force))
+    $creds = New-Object System.Management.Automation.PSCredential -ArgumentList ($username, (ConvertTo-SecureString $password -AsPlainText -Force))
+
+    $vm = Get-VM -Name $VmName
 
     # Root directory on the VM where all files will be copied to
     $destinationRoot = "C:\tmp\"
@@ -46,57 +56,61 @@ function Run-FrameworkTest {
     $remoteNclToolsRoot = Join-Path $destinationRoot "NCLTools"
     $remoteNetFxArtifactsPath = Join-Path $destinationRoot "NetFxArtifacts"
 
-    # local path to the .NET Framework enlistment
-    $netfxPath = "C:\source\NetFx\Net481Rel1Last_C\src\"
-
-    # Path to where local .NET Framework enlistment creates build outputs
-    $localNetFxArtifactsPath = "C:\binaries.amd64ret"
-    $assembliesToReplace = @(
-        "System.dll"
-    )
-
-    if ($Prereqs) {
-        if ((Get-VMFirmware -VMName $vmName | Select-Object -ExpandProperty SecureBoot) -ne "Off") {
-            Write-Host "Stopping VM to disable Secure Boot..."
-            Stop-VM -Name $vmName -Force
-
-            Write-Host "Disabling Secure Boot on VM to allow running unsigned code..."
-            Set-VMFirmware -EnableSecureBoot Off -VMName $vmName
-
-            Write-Host "Restarting VM..."
-            Start-VM -Name $vmName
+    try {
+        
+        if ($vm.State -ne "Running") {
+            Write-Host "Starting VM..."
+            Start-VM -Name $VmName
+            Write-Host "Waiting for VM to start..."
+            $vm | Wait-VM -For IPAddress
         }
 
-        Write-Host "Establishing session to VM..."
-        $session = New-PSSession -VMName $vmName -Credential $psCred
+        if ($Prereqs) {
+            if (!(Test-Path $nclToolsRoot -PathType Container)) {
+                Write-Error "NCLTools path does not exist: $nclToolsRoot"
+            }
 
-        Write-Host "Copying prereqs to VM..."
-        Invoke-Command -Session $session -ScriptBlock { New-Item -Path $using:destinationRoot -ItemType Directory -ErrorAction SilentlyContinue | Out-Null }
-        Copy-Item -Force -Verbose -Path $nclToolsRoot -Destination $remoteNclToolsRoot -Recurse -ToSession $session
+            if ((Get-VMFirmware -VM $vm | Select-Object -ExpandProperty SecureBoot) -ne "Off") {
+                Write-Host "Stopping VM to disable Secure Boot..."
+                Stop-VM -VM $vm -Force
 
-        Write-Host "Installing StrongNameHijack MSI on VM..."
-        Invoke-Command -Session $session -ScriptBlock {
-            Start-Process -FilePath "msiexec.exe" -ArgumentList "/i `"$using:remoteNclToolsRoot\StrongNameHijack.msi`" /qn" -Wait
+                Write-Host "Disabling Secure Boot on VM to allow running unsigned code..."
+                Set-VMFirmware -EnableSecureBoot Off -VMName $vmName
+
+                Write-Host "Restarting VM..."
+                Start-VM -VM $vm
+            }
+
+            Write-Host "Establishing session to VM..."
+            $session = New-PSSession -VMName $vmName -Credential $creds
+
+            Write-Host "Copying prereqs to VM..."
+            Invoke-Command -Session $session -ScriptBlock { New-Item -Path $using:destinationRoot -ItemType Directory -ErrorAction SilentlyContinue | Out-Null }
+            Copy-Item -Force -Verbose -Path $nclToolsRoot -Destination $remoteNclToolsRoot -Recurse -ToSession $session
+
+            Write-Host "Installing StrongNameHijack MSI on VM..."
+            Invoke-Command -Session $session -ScriptBlock {
+                Start-Process -FilePath "msiexec.exe" -ArgumentList "/i `"$using:remoteNclToolsRoot\StrongNameHijack.msi`" /qn" -Wait
+            }
+
+            Write-Host "Enabling test signing on VM..."
+            Invoke-Command -Session $session -ScriptBlock {
+                bcdedit /set testsigning on
+            }
+
+            Remove-PSSession $session
+
+            Write-Host "Rebooting VM to apply prereqs..."
+            Restart-VM -VM $vm -For IPAddress -Force -Wait -Type Reboot
         }
 
-        Write-Host "Enabling test signing on VM..."
-        Invoke-Command -Session $session -ScriptBlock {
-            bcdedit /set testsigning on
-        }
+        if ($BuildFramework) {
+            # we want to deploy the newly built binaries later
+            $Deploy = $true
 
-        Remove-PSSession $session
-
-        Write-Host "Rebooting VM to apply prereqs..."
-        Restart-VM -Name $vmName -For IPAddress -Force -Wait -Type Reboot
-    }
-
-    if ($BuildFramework) {
-        # we want to deploy the newly built binaries later
-        $Deploy = $true
-
-        Write-Host "Building .NET Framework binaries..."
+            Write-Host "Building .NET Framework binaries..."
     
-        @"
+            @"
 @echo off
 cdncl
 pushd .
@@ -104,53 +118,58 @@ set disable_core_build=1
 build -z System.csproj && nclsign
 popd
 "@ | C:\Windows\SysWOW64\cmd.exe /k cd $netfxPath "&&" $netfxPath\tools\razzle.cmd no_oacr ret amd64 no_certcheck
-    }
-
-    Write-Host "Establishing session to VM..."
-    $session = New-PSSession -VMName $vmName -Credential $psCred
-
-    if ($EnterSession) {
-        Write-Host "Entering interactive session on VM..."
-        Enter-PSSession -Session $session
-        exit
-    }
-
-    if ($Deploy) {
-        Write-Host "Deploying local .NET Framework build to VM..."
-        Invoke-Command -Session $session -ScriptBlock {
-            Remove-Item -Path $using:remoteNetFxArtifactsPath -Recurse -Force -ErrorAction SilentlyContinue
-            New-Item -Path $using:remoteNetFxArtifactsPath -ItemType Directory | Out-Null
         }
 
-        foreach ($assembly in $assembliesToReplace) {
-            Copy-Item -Path "$localNetFxArtifactsPath\$assembly" -Destination "$remoteNetFxArtifactsPath\$assembly" -ToSession $session
+        Write-Host "Establishing session to VM..."
+        $session = New-PSSession -VMName $vmName -Credential $creds
+
+        if ($EnterSession) {
+            Write-Host "Entering interactive session on VM..."
+            Enter-PSSession -Session $session
+            exit
         }
 
-        Write-Host "Replacing system assemblies on VM..."
-        Invoke-Command -Session $session -ScriptBlock {
-            foreach ($assembly in $using:assembliesToReplace) {
-                Write-Host "Replacing $assembly..."
-                & "$using:remoteNclToolsRoot\\ReplaceAssemblies\ReplaceSystemAssemblies\ReplaceAssembly.cmd" "$using:remoteNetFxArtifactsPath\$assembly"
+        if ($Deploy) {
+            Write-Host "Deploying local .NET Framework build to VM..."
+            Invoke-Command -Session $session -ScriptBlock {
+                Remove-Item -Path $using:remoteNetFxArtifactsPath -Recurse -Force -ErrorAction SilentlyContinue
+                New-Item -Path $using:remoteNetFxArtifactsPath -ItemType Directory | Out-Null
+            }
+
+            foreach ($assembly in $assembliesToReplace) {
+                Copy-Item -Path "$localNetFxArtifactsPath\$assembly" -Destination "$remoteNetFxArtifactsPath\$assembly" -ToSession $session
+            }
+
+            Write-Host "Replacing system assemblies on VM..."
+            Invoke-Command -Session $session -ScriptBlock {
+                foreach ($assembly in $using:assembliesToReplace) {
+                    Write-Host "Replacing $assembly..."
+                    & "$using:remoteNclToolsRoot\\ReplaceAssemblies\ReplaceSystemAssemblies\ReplaceAssembly.cmd" "$using:remoteNetFxArtifactsPath\$assembly"
+                }
             }
         }
-    }
 
-    if ($LocalReproPath) {
-        Write-Host "Copying repro to VM..."
-        Invoke-Command -Session $session -ScriptBlock {
-            Remove-Item -Path $using:remoteReproRoot -Recurse -Force -ErrorAction SilentlyContinue
+        if ($LocalReproPath) {
+            Write-Host "Copying repro to VM..."
+            Invoke-Command -Session $session -ScriptBlock {
+                Remove-Item -Path $using:remoteReproRoot -Recurse -Force -ErrorAction SilentlyContinue
+            }
+            Copy-Item -Path $localReproPath -Destination $remoteReproRoot -Recurse -ToSession $session
         }
-        Copy-Item -Path $localReproPath -Destination $remoteReproRoot -Recurse -ToSession $session
+
+
+        Write-Host "Starting repro on VM..."
+        Write-Host "==================="
+        Invoke-Command -Session $session -ScriptBlock {
+            & "$using:destinationRoot\Repro\$using:reproExe" @using:reproArgs
+        }
+        Write-Host "==================="
+        Write-Host "Repro ended"
+
     }
-
-
-    Write-Host "Starting repro on VM..."
-    Write-Host "==================="
-    Invoke-Command -Session $session -ScriptBlock {
-        & "$using:destinationRoot\Repro\$using:reproExe" @using:reproArgs
+    finally {
+        if ($session) {
+            Remove-PSSession $session
+        }
     }
-    Write-Host "==================="
-    Write-Host "Repro ended"
-
-    Remove-PSSession $session
 }
