@@ -43,3 +43,20 @@ function DecodeTaskStateFlags([int]$Flags) {
 
     return $res
 }
+
+function dbf { 
+    if ($IsWindows) {
+        $os = "windows"
+    }
+    elseif ($IsLinux) {
+        $os = "linux"
+    }
+    elseif ($IsMacOS) {
+        $os = "osx"
+    }
+    else {
+        throw "Unknown OS"
+    }
+
+    dotnet build --no-restore --no-dependencies /p:TargetOs=$os @args 
+}
