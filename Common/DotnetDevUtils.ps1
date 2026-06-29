@@ -60,3 +60,19 @@ function dbf {
 
     dotnet build --no-restore --no-dependencies /p:TargetOs=$os @args 
 }
+
+function dr {
+    dotnet run @args
+}
+
+function drn {
+    dotnet run --no-build @args
+}
+
+function dt {
+    dotnet test @args
+}
+
+function dtn {
+    dotnet test --no-build @args
+}
