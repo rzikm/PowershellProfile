@@ -307,7 +307,7 @@ function TransformWslPaths {
     }
 }
 
-function gt { git log --graph --decorate=short --pretty='format:%C(auto)%h %Cgreen%cd %C(auto)%s %Cblue%an (%aE)' --date='format-local:%Y-%m-%d %H:%M' --color }
+function gt { git log --graph --decorate=short --pretty='format:%C(auto)%h %Cgreen%cd %C(auto)%s %Cblue%an (%aE)' --date='format-local:%Y-%m-%d %H:%M' --color $args }
 
 # load stuff only when running in interactive mode to speed up stuff
 if (!($MyInvocation.ScriptName)) {
