@@ -76,3 +76,54 @@ function dt {
 function dtn {
     dotnet test --no-build @args
 }
+
+function script:Get-GitBranchesForCompletion($root, $filter, $includeHEAD = $false, $prefix = '') {
+    if ($filter -match "^(?<from>\S*\.{2,3})(?<to>.*)") {
+        $prefix += $matches['from']
+        $filter = $matches['to']
+    }
+
+    if (! $root) {
+        $root = "."
+    }
+
+    $branches = @(git -C $root branch --no-color | ForEach-Object { if (($_ -notmatch "^\* \(HEAD detached .+\)$") -and ($_ -match "^[\*\+]?\s*(?<ref>.*)")) { $matches['ref'] } }) +
+    @(git -C $root branch --no-color -r | ForEach-Object { if ($_ -match "^  (?<ref>\S+)(?: -> .+)?") { $matches['ref'] } }) +
+    @(if ($includeHEAD) { 'HEAD', 'FETCH_HEAD', 'ORIG_HEAD', 'MERGE_HEAD' })
+
+    $branches |
+    Where-Object { $_ -ne '(no branch)' -and $_ -like "$filter*" } |
+    ForEach-Object { $prefix + $_ }
+}
+
+function TransplantGitCommits {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$SourceRepository,
+
+        [Parameter(Mandatory = $true)]
+        [string]$TargetRepository,
+
+        [Parameter(Mandatory = $true)]
+        [ArgumentCompleter({ 
+                param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+                if ($fakeBoundParameters['SourceRepository']) {
+
+                    Get-GitBranchesForCompletion $fakeBoundParameters['SourceRepository'] $wordToComplete $true
+                }
+            })]
+        [string]$CommitOrRange,
+
+        [Parameter(Mandatory = $true)]
+        [string]$TargetPath
+    )
+
+    $extraParams = @()
+
+    if ($CommitOrRange -contains "..") {
+        $extraParams += @("-1")
+    }
+
+    git -C $SourceRepository format-patch @extraParams $CommitOrRange --stdout | git -C $TargetRepository am --directory=$TargetPath
+}
