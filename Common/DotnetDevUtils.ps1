@@ -121,9 +121,11 @@ function TransplantGitCommits {
 
     $extraParams = @()
 
-    if ($CommitOrRange -contains "..") {
+    if ($CommitOrRange -notlike "*..*") {
         $extraParams += @("-1")
     }
+
+    Write-Host " git -C $SourceRepository format-patch $extraParams $CommitOrRange --stdout | git -C $TargetRepository am --directory=$TargetPath"
 
     git -C $SourceRepository format-patch @extraParams $CommitOrRange --stdout | git -C $TargetRepository am --directory=$TargetPath
 }
